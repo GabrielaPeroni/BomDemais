@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Bom Demais DB</string>
+    <string name="estoque_button_text">Estoque</string>
+    <string name="financeiro_button_text">Financeiro</string>
+    <string name="add_transaction">+</string>
+    <string name="total_r_0_00">Total: R$0,00</string>
+    <string name="confirmar">Confirmar</string>
+    <string name="cancelar">Cancelar</string>
+    <string name="digite_quantidade">Digite a quantidade que deseja adicionar</string>
+    <string name="starting_value">0,00</string>
+</resources>

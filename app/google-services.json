@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "967055215932",
+    "project_id": "bom-demais-db",
+    "storage_bucket": "bom-demais-db.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:967055215932:android:9b36642ce0fade845d6239",
+        "android_client_info": {
+          "package_name": "com.estoque.bomdemais"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBRmYbqdmnyx5n6kaZblOlKtV2YWGbuI4Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

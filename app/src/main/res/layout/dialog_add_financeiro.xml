@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:padding="16dp">
+
+    <!-- Instruction text -->
+    <TextView
+        android:id="@+id/text_instruction"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/digite_quantidade"
+        android:textSize="18sp"
+        android:layout_marginBottom="8dp"/>
+
+    <!-- Container for the R$ label and input field -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <!-- R$ label -->
+        <TextView
+            android:id="@+id/label_currency"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="R$"
+            android:textSize="18sp"
+            android:layout_marginEnd="8dp"/>
+
+        <!-- Input field for amount -->
+        <EditText
+            android:id="@+id/input_amount"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:hint="@string/starting_value"
+            android:inputType="numberDecimal" />
+    </LinearLayout>
+
+    <!-- Confirm and Cancel buttons -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:layout_marginTop="16dp">
+
+        <Button
+            android:id="@+id/btn_confirm"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/confirmar"
+            android:layout_marginEnd="16dp"/>
+
+        <Button
+            android:id="@+id/btn_cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cancelar"
+            android:layout_marginStart="16dp"/>
+
+    </LinearLayout>
+</LinearLayout>

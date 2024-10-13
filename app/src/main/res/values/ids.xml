@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <item name="text_transacao" type="id" />
+    <item name="fab_add_transacao" type="id" />
+    <item name="add_transaction" type="id" />
+    <item name="btn_cancel" type="id" />
+    <item name="edit_text_value" type="id" />
+</resources>
