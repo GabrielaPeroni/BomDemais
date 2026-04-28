@@ -6,6 +6,14 @@
     android:orientation="horizontal"
     android:padding="16dp">
 
+    <!-- Ícone de caixa ao lado do nome do produto -->
+    <ImageView
+        android:id="@+id/icon_product"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:src="@drawable/caixa_padrao"
+        android:layout_marginEnd="8dp" />
+
     <!-- Seção esquerda: Nome do produto e categoria -->
     <LinearLayout
         android:layout_width="0dp"
@@ -28,29 +36,50 @@
             android:textSize="12sp" />
     </LinearLayout>
 
-    <!--Layout dos botões +1 e -1 -->
+    <!-- Layout dos botões +1 e -1 com estilo unificado -->
     <LinearLayout
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:orientation="horizontal">
+        android:orientation="horizontal"
+        android:gravity="center"
+        android:layout_gravity="center">
 
-        <Button
-            android:id="@+id/btn_increase"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="+1" />
 
-        <TextView
-            android:id="@+id/text_quantity"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0"
-            android:padding="8dp" />
-
+        <!-- Botão + -->
         <Button
             android:id="@+id/btn_decrease"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="-1" />
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/button_left_background"
+            android:text="-"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:layout_margin="0dp"
+            android:padding="0dp" />
+
+        <!-- TextView central para quantidade -->
+        <TextView
+            android:id="@+id/text_quantity"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:gravity="center"
+            android:background="@color/white"
+            android:text="1"
+            android:textSize="18sp"
+            android:textColor="#000000"
+            android:layout_margin="0dp"
+            android:padding="0dp" />
+
+        <!-- Botão - -->
+        <Button
+            android:id="@+id/btn_increase"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:background="@drawable/button_right_background"
+            android:text="+"
+            android:textColor="#FFFFFF"
+            android:textSize="18sp"
+            android:layout_margin="0dp"
+            android:padding="0dp" />
     </LinearLayout>
 </LinearLayout>
