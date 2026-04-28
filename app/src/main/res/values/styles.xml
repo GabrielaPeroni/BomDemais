@@ -1,0 +1,7 @@
+<resources>
+    <!-- Estilo para bordas arredondadas -->
+    <style name="ShapeAppearance">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">16dp</item> <!-- Ajuste para a arredondagem desejada -->
+    </style>
+</resources>

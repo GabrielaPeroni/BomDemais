@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">Bom Demais DB</string>
+    <string name="estoque_button_text">Estoque</string>
+    <string name="notas_button_text">Notas</string>
+</resources>

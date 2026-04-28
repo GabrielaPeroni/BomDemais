@@ -1,0 +1,30 @@
+*.iml
+.gradle
+/local.properties
+/.idea/caches
+/.idea/libraries
+/.idea/modules.xml
+/.idea/workspace.xml
+/.idea/navEditor.xml
+/.idea/assetWizardSettings.xml
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+local.properties
+venv/
+
+# Firebase config (contains API keys)
+google-services.json
+
+# Android signing keystores and credentials
+*.keystore
+*.jks
+key.properties
+keystore.properties
+
+# Generic secrets
+.env
+.env.*
+secrets.properties

@@ -1,0 +1,72 @@
+#!/usr/bin/env bash
+# Pre-commit hook: blocks commits that contain sensitive data.
+# Install: git config core.hooksPath .githooks
+
+set -euo pipefail
+
+RED='\033[0;31m'
+YELLOW='\033[1;33m'
+NC='\033[0m'
+
+ERRORS=0
+
+staged_files() {
+  git diff --cached --name-only --diff-filter=ACM
+}
+
+# 1. Block known sensitive files
+BLOCKED_FILES=(
+  "google-services.json"
+  "*.keystore"
+  "*.jks"
+  "key.properties"
+  "keystore.properties"
+  ".env"
+  "secrets.properties"
+  "local.properties"
+)
+
+while IFS= read -r file; do
+  for pattern in "${BLOCKED_FILES[@]}"; do
+    # shellcheck disable=SC2254
+    case "$file" in
+      *$pattern | $pattern)
+        echo -e "${RED}BLOCKED:${NC} Sensitive file staged: $file"
+        ERRORS=$((ERRORS + 1))
+        ;;
+    esac
+  done
+done < <(staged_files)
+
+# 2. Scan staged content for secret patterns
+SECRET_PATTERNS=(
+  'AIza[0-9A-Za-z_-]{35}'           # Google/Firebase API keys
+  'AAAA[A-Za-z0-9_-]{7}:[A-Za-z0-9_-]{140}'  # FCM server keys
+  '-----BEGIN (RSA |EC |DSA |OPENSSH )?PRIVATE KEY'  # Private keys
+  'password\s*=\s*["\047][^"\047]{4,}'        # Hardcoded passwords
+  'secret\s*=\s*["\047][^"\047]{4,}'          # Hardcoded secrets
+  'api[_-]?key\s*=\s*["\047][^"\047]{8,}'     # Generic API key assignments
+)
+
+while IFS= read -r file; do
+  [[ -f "$file" ]] || continue
+
+  staged_content=$(git show ":$file" 2>/dev/null) || continue
+
+  for pattern in "${SECRET_PATTERNS[@]}"; do
+    if echo "$staged_content" | grep -qE "$pattern"; then
+      echo -e "${RED}BLOCKED:${NC} Possible secret found in ${YELLOW}$file${NC} (pattern: $pattern)"
+      ERRORS=$((ERRORS + 1))
+    fi
+  done
+done < <(staged_files)
+
+if [[ $ERRORS -gt 0 ]]; then
+  echo ""
+  echo -e "${RED}Commit blocked: $ERRORS sensitive data issue(s) found.${NC}"
+  echo "Fix the issues above before committing."
+  echo "If this is a false positive, use: git commit --no-verify (use with caution)"
+  exit 1
+fi
+
+exit 0
