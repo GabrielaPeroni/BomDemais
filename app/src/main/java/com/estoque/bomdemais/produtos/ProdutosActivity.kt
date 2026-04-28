@@ -10,6 +10,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.FirebaseHelper
 import com.estoque.bomdemais.data.Product
+import com.estoque.bomdemais.data.ShoppingItem
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -21,7 +22,6 @@ class ProdutosActivity : AppCompatActivity() {
     private lateinit var adapter: ProdutosAdapter
     private lateinit var firebaseHelper: FirebaseHelper
     private lateinit var categoria: String
-    private val zeroQuantityProducts = mutableListOf<Product>()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,14 +32,8 @@ class ProdutosActivity : AppCompatActivity() {
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.title = categoria
-        toolbar.setNavigationOnClickListener {
-            if (categoria != FirebaseHelper.PRODUTOS_EM_FALTA) {
-                showConfirmationDialog()
-            } else {
-                finish()
-            }
-        }
 
         recyclerView = findViewById(R.id.recycler_view_produtos)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -47,7 +41,7 @@ class ProdutosActivity : AppCompatActivity() {
         adapter = ProdutosAdapter(
             mutableListOf(),
             onClick = {},
-            onZeroQuantity = { product -> addZeroQuantityProduct(product) }
+            onAddToList = { product -> addProductToShoppingList(product) }
         )
         recyclerView.adapter = adapter
 
@@ -57,6 +51,11 @@ class ProdutosActivity : AppCompatActivity() {
 
         loadProductsFromFirebase()
         setupSearchBar()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
     }
 
     private fun showAddProdutoDialog() {
@@ -98,33 +97,11 @@ class ProdutosActivity : AppCompatActivity() {
         })
     }
 
-    private fun showConfirmationDialog() {
-        if (zeroQuantityProducts.isNotEmpty()) {
-            val productNames = zeroQuantityProducts.joinToString("\n") { it.name }
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Mover Produtos")
-                .setMessage("Os seguintes produtos estao zerados:\n\n$productNames\n\nDeseja movê-los para '${FirebaseHelper.PRODUTOS_EM_FALTA}'?")
-                .setPositiveButton("Confirmar") { _, _ -> moveProductsToLack(zeroQuantityProducts) }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        } else {
-            finish()
+    private fun addProductToShoppingList(product: Product) {
+        val item = ShoppingItem(name = product.name, category = product.category, quantityToBuy = 1)
+        firebaseHelper.addShoppingItem(item) { success ->
+            val msg = if (success) "'${product.name}' adicionado à lista!" else "Falha ao adicionar à lista."
+            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
         }
-    }
-
-    private fun addZeroQuantityProduct(product: Product) {
-        if (!zeroQuantityProducts.contains(product)) {
-            zeroQuantityProducts.add(product)
-        }
-    }
-
-    private fun moveProductsToLack(products: List<Product>) {
-        products.forEach { product ->
-            firebaseHelper.moveProductToLackCategory(product)
-            adapter.removeProduct(product)
-        }
-        zeroQuantityProducts.clear()
-        Toast.makeText(this, "Produtos movidos com sucesso", Toast.LENGTH_SHORT).show()
-        finish()
     }
 }

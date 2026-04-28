@@ -13,7 +13,7 @@ import com.estoque.bomdemais.data.Product
 class ProdutosAdapter(
     private var productList: MutableList<Product>,
     private val onClick: (Product) -> Unit,
-    private val onZeroQuantity: (Product) -> Unit
+    private val onAddToList: (Product) -> Unit
 ) : RecyclerView.Adapter<ProdutosAdapter.ProdutoViewHolder>() {
 
     private var firebaseHelper = FirebaseHelper()
@@ -25,6 +25,7 @@ class ProdutosAdapter(
         val btnIncrease: Button = view.findViewById(R.id.btn_increase)
         val btnDecrease: Button = view.findViewById(R.id.btn_decrease)
         val categoryTextView: TextView = view.findViewById(R.id.text_product_category)
+        val btnAddToList: Button = view.findViewById(R.id.btn_add_to_list)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProdutoViewHolder {
@@ -39,6 +40,12 @@ class ProdutosAdapter(
         holder.quantityTextView.text = product.quantity.toString()
         holder.categoryTextView.text = product.category
 
+        holder.btnAddToList.visibility = if (product.quantity == 0) View.VISIBLE else View.GONE
+        holder.btnAddToList.setOnClickListener {
+            onAddToList(product)
+            holder.btnAddToList.visibility = View.GONE
+        }
+
         holder.btnIncrease.setOnClickListener {
             product.quantity++
             firebaseHelper.updateProductQuantity(product)
@@ -50,9 +57,6 @@ class ProdutosAdapter(
                 product.quantity--
                 firebaseHelper.updateProductQuantity(product)
                 notifyItemChanged(position)
-                if (product.quantity == 0) {
-                    onZeroQuantity(product)
-                }
             }
         }
 

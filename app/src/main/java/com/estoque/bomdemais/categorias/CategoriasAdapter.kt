@@ -7,7 +7,6 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.FirebaseHelper
 
 class CategoriasAdapter(
     var categorias: MutableList<String>,
@@ -27,13 +26,7 @@ class CategoriasAdapter(
     override fun onBindViewHolder(holder: CategoriaViewHolder, position: Int) {
         val categoria = categorias[position]
         holder.textViewCategoria.text = categoria
-
-        if (categoria == FirebaseHelper.PRODUTOS_EM_FALTA) {
-            holder.frameLayout.setBackgroundResource(R.drawable.button_produtos_em_falta)
-        } else {
-            holder.frameLayout.setBackgroundResource(R.drawable.button_categoria)
-        }
-
+        holder.frameLayout.setBackgroundResource(R.drawable.button_categoria)
         holder.itemView.setOnClickListener { onClick(categoria) }
     }
 

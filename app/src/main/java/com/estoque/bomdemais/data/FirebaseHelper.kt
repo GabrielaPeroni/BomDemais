@@ -9,6 +9,7 @@ class FirebaseHelper {
     private val categoriesRef = database.getReference("categorias")
     private val productsRef = database.getReference("produtos")
     private val notasRef = database.getReference("notas")
+    private val listaComprasRef = database.getReference("lista_compras")
 
     fun addCategoria(category: String, callback: (Boolean) -> Unit) {
         val categoryId = categoriesRef.push().key
@@ -63,13 +64,36 @@ class FirebaseHelper {
             })
     }
 
-    fun moveProductToLackCategory(product: Product) {
-        productsRef.child(product.id).child("category").setValue(PRODUTOS_EM_FALTA)
-            .addOnCompleteListener { task ->
-                if (!task.isSuccessful) {
-                    Log.e("FirebaseHelper", "Failed to move product: ${task.exception?.message}")
+    fun addShoppingItem(item: ShoppingItem, callback: (Boolean) -> Unit) {
+        val key = listaComprasRef.push().key ?: return callback(false)
+        val withId = item.copy(id = key)
+        listaComprasRef.child(key).setValue(withId)
+            .addOnCompleteListener { callback(it.isSuccessful) }
+    }
+
+    fun getShoppingItems(callback: (List<ShoppingItem>) -> Unit) {
+        listaComprasRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val items = mutableListOf<ShoppingItem>()
+                for (child in snapshot.children) {
+                    child.getValue(ShoppingItem::class.java)?.let { items.add(it) }
                 }
+                callback(items)
             }
+
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FirebaseHelper", "Failed to load lista: ${error.message}")
+                callback(emptyList())
+            }
+        })
+    }
+
+    fun deleteShoppingItem(itemId: String) {
+        listaComprasRef.child(itemId).removeValue()
+    }
+
+    fun updateShoppingItemQuantity(item: ShoppingItem) {
+        listaComprasRef.child(item.id).child("quantityToBuy").setValue(item.quantityToBuy)
     }
 
     fun getNotes(callback: (List<Note>) -> Unit) {
@@ -111,7 +135,4 @@ class FirebaseHelper {
         productsRef.child(product.id).child("quantity").setValue(product.quantity)
     }
 
-    companion object {
-        const val PRODUTOS_EM_FALTA = "Produtos em falta"
-    }
 }

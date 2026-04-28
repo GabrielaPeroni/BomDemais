@@ -31,6 +31,7 @@
         <activity android:name=".notas.NotasActivity" />
         <activity android:name=".categorias.CategoriasActivity" />
         <activity android:name=".produtos.ProdutosActivity" />
+        <activity android:name=".listadecompras.ListaDeComprasActivity" />
     </application>
 
 </manifest>
