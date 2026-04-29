@@ -15,6 +15,9 @@
 local.properties
 venv/
 
+# Claude configs
+/.claude
+
 # Firebase config (contains API keys)
 google-services.json
 

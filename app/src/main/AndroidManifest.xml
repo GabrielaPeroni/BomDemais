@@ -5,6 +5,7 @@
     <uses-permission android:name="android.permission.INTERNET"/>
 
     <application
+        android:name=".BomDemaisApp"
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
@@ -28,8 +29,6 @@
             android:exported="false">
 
         </activity>
-        <activity android:name=".notas.NotasActivity" />
-        <activity android:name=".categorias.CategoriasActivity" />
         <activity android:name=".produtos.ProdutosActivity" />
     </application>
 

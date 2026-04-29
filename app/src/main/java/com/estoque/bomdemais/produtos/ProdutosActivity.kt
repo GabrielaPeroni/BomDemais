@@ -3,43 +3,59 @@ package com.estoque.bomdemais.produtos
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
+import android.view.View
+import android.widget.ImageButton
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.OnBackPressedCallback
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.FirebaseHelper
 import com.estoque.bomdemais.data.Product
+import com.estoque.bomdemais.utils.SwipeToDeleteCallback
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class ProdutosActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ProdutosAdapter
-    private lateinit var firebaseHelper: FirebaseHelper
     private lateinit var categoria: String
-    private val zeroQuantityProducts = mutableListOf<Product>()
+    private lateinit var fab: FloatingActionButton
+    private lateinit var contextualBar: LinearLayout
+    private lateinit var textSelectedCount: TextView
+    private lateinit var btnContextualRename: ImageButton
+
+    private val viewModel: ProdutosViewModel by viewModels {
+        ProdutosViewModel.factory(intent.getStringExtra("categoria") ?: "")
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_produtos)
 
-        firebaseHelper = FirebaseHelper()
         categoria = intent.getStringExtra("categoria") ?: ""
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
         setSupportActionBar(toolbar)
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.title = categoria
-        toolbar.setNavigationOnClickListener {
-            if (categoria != FirebaseHelper.PRODUTOS_EM_FALTA) {
-                showConfirmationDialog()
-            } else {
-                finish()
-            }
-        }
+
+        contextualBar = findViewById(R.id.contextual_bar)
+        textSelectedCount = findViewById(R.id.text_selected_count)
+        btnContextualRename = findViewById(R.id.btn_contextual_rename)
+        fab = findViewById(R.id.fab_add_produto)
 
         recyclerView = findViewById(R.id.recycler_view_produtos)
         recyclerView.layoutManager = LinearLayoutManager(this)
@@ -47,45 +63,128 @@ class ProdutosActivity : AppCompatActivity() {
         adapter = ProdutosAdapter(
             mutableListOf(),
             onClick = {},
-            onZeroQuantity = { product -> addZeroQuantityProduct(product) }
+            onAddToList = { product ->
+                viewModel.addToShoppingList(product.name, product.category)
+                Toast.makeText(this, "'${product.name}' adicionado à lista!", Toast.LENGTH_SHORT).show()
+            },
+            onQuantityChanged = { product -> viewModel.updateQuantity(product) },
+            onLongPress = { product ->
+                adapter.enterSelectionMode(product.id)
+                showContextualBar()
+            },
+            onSelectionChanged = { count ->
+                textSelectedCount.text = "$count selecionado(s)"
+                btnContextualRename.visibility = if (count == 1) View.VISIBLE else View.GONE
+            }
         )
         recyclerView.adapter = adapter
 
-        findViewById<FloatingActionButton>(R.id.fab_add_produto).setOnClickListener {
-            showAddProdutoDialog()
+        val swipeCallback = SwipeToDeleteCallback(
+            isEnabled = { !adapter.isSelectionMode },
+            onSwiped = { position ->
+                val product = adapter.getItemAt(position)
+                adapter.removeProduct(product)
+                Snackbar.make(recyclerView, "'${product.name}' removido", Snackbar.LENGTH_LONG)
+                    .setAction("Desfazer") {
+                        viewModel.restoreProduct(product)
+                    }
+                    .addCallback(object : Snackbar.Callback() {
+                        override fun onDismissed(snackbar: Snackbar, event: Int) {
+                            if (event != DISMISS_EVENT_ACTION) viewModel.deleteProduct(product)
+                        }
+                    })
+                    .show()
+            }
+        )
+        ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView)
+
+        fab.setOnClickListener { showAddProdutoDialog() }
+
+        findViewById<ImageButton>(R.id.btn_contextual_close).setOnClickListener { exitSelectionMode() }
+
+        findViewById<ImageButton>(R.id.btn_contextual_delete).setOnClickListener {
+            val selected = adapter.getSelectedItems()
+            if (selected.isEmpty()) return@setOnClickListener
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Excluir ${selected.size} produto(s)?")
+                .setPositiveButton("Excluir") { _, _ ->
+                    selected.forEach {
+                        viewModel.deleteProduct(it)
+                        adapter.removeProduct(it)
+                    }
+                    exitSelectionMode()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
         }
 
-        loadProductsFromFirebase()
+        btnContextualRename.setOnClickListener {
+            val product = adapter.getSelectedItems().firstOrNull() ?: return@setOnClickListener
+            val input = TextInputEditText(this).apply { setText(product.name) }
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Renomear produto")
+                .setView(input)
+                .setPositiveButton("Salvar") { _, _ ->
+                    val newName = input.text.toString().trim()
+                    if (newName.isNotEmpty()) {
+                        viewModel.renameProduct(product, newName)
+                        exitSelectionMode()
+                    }
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
+
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (adapter.isSelectionMode) {
+                    exitSelectionMode()
+                } else {
+                    finish()
+                }
+            }
+        })
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.products.collect { adapter.updateProducts(it) }
+            }
+        }
+
         setupSearchBar()
     }
 
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
+    private fun showContextualBar() {
+        contextualBar.visibility = View.VISIBLE
+        fab.hide()
+    }
+
+    private fun exitSelectionMode() {
+        adapter.exitSelectionMode()
+        contextualBar.visibility = View.GONE
+        fab.show()
+    }
+
     private fun showAddProdutoDialog() {
-        val input = com.google.android.material.textfield.TextInputEditText(this)
+        val input = TextInputEditText(this)
         input.hint = "Nome do Produto"
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Adicionar Produto")
             .setView(input)
             .setPositiveButton("Adicionar") { _, _ ->
-                val produto = input.text.toString().trim()
-                if (produto.isNotEmpty()) {
-                    addProductToDatabase(produto)
+                val nome = input.text.toString().trim()
+                if (nome.isNotEmpty()) {
+                    viewModel.addProduct(nome, categoria)
                 }
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }
-
-    private fun addProductToDatabase(produto: String) {
-        firebaseHelper.addProduct(produto, categoria)
-        Toast.makeText(this, "'$produto' adicionado!", Toast.LENGTH_SHORT).show()
-        adapter.addProduct(produto)
-    }
-
-    private fun loadProductsFromFirebase() {
-        firebaseHelper.getProductsByCategory(categoria) { produtos ->
-            adapter.updateProducts(produtos)
-        }
     }
 
     private fun setupSearchBar() {
@@ -96,35 +195,5 @@ class ProdutosActivity : AppCompatActivity() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
-    }
-
-    private fun showConfirmationDialog() {
-        if (zeroQuantityProducts.isNotEmpty()) {
-            val productNames = zeroQuantityProducts.joinToString("\n") { it.name }
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Mover Produtos")
-                .setMessage("Os seguintes produtos estao zerados:\n\n$productNames\n\nDeseja movê-los para '${FirebaseHelper.PRODUTOS_EM_FALTA}'?")
-                .setPositiveButton("Confirmar") { _, _ -> moveProductsToLack(zeroQuantityProducts) }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        } else {
-            finish()
-        }
-    }
-
-    private fun addZeroQuantityProduct(product: Product) {
-        if (!zeroQuantityProducts.contains(product)) {
-            zeroQuantityProducts.add(product)
-        }
-    }
-
-    private fun moveProductsToLack(products: List<Product>) {
-        products.forEach { product ->
-            firebaseHelper.moveProductToLackCategory(product)
-            adapter.removeProduct(product)
-        }
-        zeroQuantityProducts.clear()
-        Toast.makeText(this, "Produtos movidos com sucesso", Toast.LENGTH_SHORT).show()
-        finish()
     }
 }
