@@ -27,6 +27,16 @@
             android:maxLines="2"
             android:ellipsize="end" />
 
+        <CheckBox
+            android:id="@+id/checkbox_select"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:visibility="gone"
+            android:clickable="false"
+            android:focusable="false"
+            android:buttonTint="@android:color/white" />
+
     </FrameLayout>
 
 </com.google.android.material.card.MaterialCardView>

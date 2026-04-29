@@ -4,5 +4,6 @@ data class ShoppingItem(
     val id: String = "",
     val name: String = "",
     val category: String = "",
-    var quantityToBuy: Int = 1
+    var quantityToBuy: Int = 1,
+    var isChecked: Boolean = false
 )

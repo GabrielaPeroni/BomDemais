@@ -33,9 +33,14 @@ class CategoriasActivity : AppCompatActivity() {
         recyclerViewCategorias = findViewById(R.id.recycler_view_categorias)
         recyclerViewCategorias.layoutManager = GridLayoutManager(this, 2)
 
-        adapterCategorias = CategoriasAdapter(mutableListOf()) { categoria ->
-            startActivity(Intent(this, ProdutosActivity::class.java).putExtra("categoria", categoria))
-        }
+        adapterCategorias = CategoriasAdapter(
+            mutableListOf(),
+            onClick = { categoria ->
+                startActivity(Intent(this, ProdutosActivity::class.java).putExtra("categoria", categoria))
+            },
+            onLongPress = {},
+            onSelectionChanged = {}
+        )
         recyclerViewCategorias.adapter = adapterCategorias
 
         findViewById<FloatingActionButton>(R.id.fab_add_categoria).setOnClickListener {

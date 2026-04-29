@@ -33,13 +33,10 @@ class ListaDeComprasActivity : AppCompatActivity() {
 
         adapter = ListaDeComprasAdapter(
             mutableListOf(),
-            onDelete = { item ->
-                firebaseHelper.deleteShoppingItem(item.id)
-                adapter.removeItem(item)
-            },
-            onQuantityChanged = { item ->
-                firebaseHelper.updateShoppingItemQuantity(item)
-            }
+            onCheckedChanged = { item -> firebaseHelper.updateShoppingItemChecked(item) },
+            onQuantityChanged = { item -> firebaseHelper.updateShoppingItemQuantity(item) },
+            onLongPress = {},
+            onSelectionChanged = {}
         )
         recyclerView.adapter = adapter
 

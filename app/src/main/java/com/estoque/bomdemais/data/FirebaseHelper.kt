@@ -11,6 +11,13 @@ class FirebaseHelper {
     private val notasRef = database.getReference("notas")
     private val listaComprasRef = database.getReference("lista_compras")
 
+    init {
+        categoriesRef.keepSynced(true)
+        productsRef.keepSynced(true)
+        notasRef.keepSynced(true)
+        listaComprasRef.keepSynced(true)
+    }
+
     fun addCategoria(category: String, callback: (Boolean) -> Unit) {
         val categoryId = categoriesRef.push().key
         if (categoryId != null) {
@@ -21,21 +28,21 @@ class FirebaseHelper {
         }
     }
 
-    fun getCategorias(callback: (List<String>) -> Unit) {
-        categoriesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+    fun listenToCategories(callback: (List<String>) -> Unit): () -> Unit {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val categories = mutableListOf<String>()
-                for (categorySnapshot in snapshot.children) {
-                    categorySnapshot.getValue(String::class.java)?.let { categories.add(it) }
+                for (child in snapshot.children) {
+                    child.getValue(String::class.java)?.let { categories.add(it) }
                 }
                 callback(categories)
             }
-
             override fun onCancelled(error: DatabaseError) {
                 Log.e("FirebaseHelper", "Failed to load categories: ${error.message}")
-                callback(emptyList())
             }
-        })
+        }
+        categoriesRef.addValueEventListener(listener)
+        return { categoriesRef.removeEventListener(listener) }
     }
 
     fun addProduct(name: String, category: String, callback: (Product?) -> Unit) {
@@ -45,22 +52,22 @@ class FirebaseHelper {
             .addOnCompleteListener { task -> callback(if (task.isSuccessful) product else null) }
     }
 
-    fun getProductsByCategory(category: String, callback: (List<Product>) -> Unit) {
-        productsRef.orderByChild("category").equalTo(category)
-            .addListenerForSingleValueEvent(object : ValueEventListener {
-                override fun onDataChange(snapshot: DataSnapshot) {
-                    val products = mutableListOf<Product>()
-                    for (productSnapshot in snapshot.children) {
-                        productSnapshot.getValue(Product::class.java)?.let { products.add(it) }
-                    }
-                    callback(products)
+    fun listenToProductsByCategory(category: String, callback: (List<Product>) -> Unit): () -> Unit {
+        val query = productsRef.orderByChild("category").equalTo(category)
+        val listener = object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                val products = mutableListOf<Product>()
+                for (child in snapshot.children) {
+                    child.getValue(Product::class.java)?.let { products.add(it) }
                 }
-
-                override fun onCancelled(error: DatabaseError) {
-                    Log.e("FirebaseHelper", "Failed to load products: ${error.message}")
-                    callback(emptyList())
-                }
-            })
+                callback(products)
+            }
+            override fun onCancelled(error: DatabaseError) {
+                Log.e("FirebaseHelper", "Failed to load products: ${error.message}")
+            }
+        }
+        query.addValueEventListener(listener)
+        return { query.removeEventListener(listener) }
     }
 
     fun addShoppingItem(item: ShoppingItem, callback: (Boolean) -> Unit) {
@@ -70,8 +77,8 @@ class FirebaseHelper {
             .addOnCompleteListener { callback(it.isSuccessful) }
     }
 
-    fun getShoppingItems(callback: (List<ShoppingItem>) -> Unit) {
-        listaComprasRef.addListenerForSingleValueEvent(object : ValueEventListener {
+    fun listenToShoppingItems(callback: (List<ShoppingItem>) -> Unit): () -> Unit {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val items = mutableListOf<ShoppingItem>()
                 for (child in snapshot.children) {
@@ -79,12 +86,12 @@ class FirebaseHelper {
                 }
                 callback(items)
             }
-
             override fun onCancelled(error: DatabaseError) {
                 Log.e("FirebaseHelper", "Failed to load lista: ${error.message}")
-                callback(emptyList())
             }
-        })
+        }
+        listaComprasRef.addValueEventListener(listener)
+        return { listaComprasRef.removeEventListener(listener) }
     }
 
     fun deleteShoppingItem(itemId: String) {
@@ -95,22 +102,22 @@ class FirebaseHelper {
         listaComprasRef.child(item.id).child("quantityToBuy").setValue(item.quantityToBuy)
     }
 
-    fun getNotes(callback: (List<Note>) -> Unit) {
-        notasRef.addListenerForSingleValueEvent(object : ValueEventListener {
+    fun listenToNotes(callback: (List<Note>) -> Unit): () -> Unit {
+        val listener = object : ValueEventListener {
             override fun onDataChange(snapshot: DataSnapshot) {
                 val notes = mutableListOf<Note>()
-                for (noteSnapshot in snapshot.children) {
-                    noteSnapshot.getValue(Note::class.java)?.let { notes.add(it) }
+                for (child in snapshot.children) {
+                    child.getValue(Note::class.java)?.let { notes.add(it) }
                 }
                 notes.sortByDescending { it.timestamp }
                 callback(notes)
             }
-
             override fun onCancelled(error: DatabaseError) {
                 Log.e("FirebaseHelper", "Failed to load notes: ${error.message}")
-                callback(emptyList())
             }
-        })
+        }
+        notasRef.addValueEventListener(listener)
+        return { notasRef.removeEventListener(listener) }
     }
 
     fun addNote(text: String, callback: (Note?) -> Unit) {
@@ -132,6 +139,92 @@ class FirebaseHelper {
 
     fun updateProductQuantity(product: Product) {
         productsRef.child(product.id).child("quantity").setValue(product.quantity)
+    }
+
+    fun updateShoppingItemChecked(item: ShoppingItem) {
+        listaComprasRef.child(item.id).child("isChecked").setValue(item.isChecked)
+    }
+
+    fun restoreShoppingItem(item: ShoppingItem) {
+        listaComprasRef.child(item.id).setValue(item)
+    }
+
+    fun restoreNote(note: Note) {
+        notasRef.child(note.id).setValue(note)
+    }
+
+    fun deleteProduct(productId: String) {
+        productsRef.child(productId).removeValue()
+    }
+
+    fun restoreProduct(product: Product) {
+        productsRef.child(product.id).setValue(product)
+    }
+
+    fun renameProduct(product: Product, newName: String) {
+        productsRef.child(product.id).child("name").setValue(newName)
+    }
+
+    fun renameNote(note: Note, newText: String) {
+        notasRef.child(note.id).child("text").setValue(newText)
+    }
+
+    fun renameShoppingItem(item: ShoppingItem, newName: String) {
+        listaComprasRef.child(item.id).child("name").setValue(newName)
+    }
+
+    fun deleteCategory(name: String) {
+        categoriesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                for (child in snapshot.children) {
+                    if (child.getValue(String::class.java) == name) {
+                        child.ref.removeValue()
+                        break
+                    }
+                }
+            }
+            override fun onCancelled(error: DatabaseError) {}
+        })
+        productsRef.orderByChild("category").equalTo(name)
+            .addListenerForSingleValueEvent(object : ValueEventListener {
+                override fun onDataChange(snapshot: DataSnapshot) {
+                    for (child in snapshot.children) child.ref.removeValue()
+                }
+                override fun onCancelled(error: DatabaseError) {}
+            })
+    }
+
+    fun renameCategory(oldName: String, newName: String, callback: (Boolean) -> Unit) {
+        categoriesRef.addListenerForSingleValueEvent(object : ValueEventListener {
+            override fun onDataChange(snapshot: DataSnapshot) {
+                var categoryKey: String? = null
+                for (child in snapshot.children) {
+                    if (child.getValue(String::class.java) == oldName) {
+                        categoryKey = child.key
+                        break
+                    }
+                }
+                if (categoryKey == null) { callback(false); return }
+                categoriesRef.child(categoryKey).setValue(newName)
+                    .addOnCompleteListener { task ->
+                        if (!task.isSuccessful) { callback(false); return@addOnCompleteListener }
+                        productsRef.orderByChild("category").equalTo(oldName)
+                            .addListenerForSingleValueEvent(object : ValueEventListener {
+                                override fun onDataChange(productSnapshot: DataSnapshot) {
+                                    val updates = mutableMapOf<String, Any>()
+                                    for (child in productSnapshot.children) {
+                                        child.key?.let { updates["$it/category"] = newName }
+                                    }
+                                    if (updates.isEmpty()) { callback(true); return }
+                                    productsRef.updateChildren(updates)
+                                        .addOnCompleteListener { callback(it.isSuccessful) }
+                                }
+                                override fun onCancelled(error: DatabaseError) { callback(false) }
+                            })
+                    }
+            }
+            override fun onCancelled(error: DatabaseError) { callback(false) }
+        })
     }
 
 }

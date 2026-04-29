@@ -30,10 +30,7 @@ class NotasActivity : AppCompatActivity() {
         recyclerView = findViewById(R.id.recycler_view_notas)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
-        adapter = NotasAdapter(mutableListOf()) { note ->
-            firebaseHelper.deleteNote(note.id)
-            adapter.removeNote(note)
-        }
+        adapter = NotasAdapter(mutableListOf(), onLongPress = {}, onSelectionChanged = {})
         recyclerView.adapter = adapter
 
         findViewById<FloatingActionButton>(R.id.fab_add_nota).setOnClickListener {
