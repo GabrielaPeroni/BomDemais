@@ -11,29 +11,31 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.FirebaseHelper
-import com.estoque.bomdemais.data.ShoppingItem
 import com.estoque.bomdemais.utils.SwipeToDeleteCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class ListaDeComprasFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ListaDeComprasAdapter
-    private lateinit var firebaseHelper: FirebaseHelper
+    private val viewModel: ListaDeComprasViewModel by viewModels { ListaDeComprasViewModel.Factory }
     private lateinit var fab: FloatingActionButton
     private lateinit var contextualBar: LinearLayout
     private lateinit var textSelectedCount: TextView
     private lateinit var btnContextualRename: ImageButton
     private lateinit var rootView: View
-    private var stopListener: (() -> Unit)? = null
 
     private val backPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
@@ -51,8 +53,6 @@ class ListaDeComprasFragment : Fragment() {
 
         (activity as AppCompatActivity).supportActionBar?.title = "Lista de Compras"
 
-        firebaseHelper = FirebaseHelper()
-
         contextualBar = view.findViewById(R.id.contextual_bar)
         textSelectedCount = view.findViewById(R.id.text_selected_count)
         btnContextualRename = view.findViewById(R.id.btn_contextual_rename)
@@ -63,8 +63,8 @@ class ListaDeComprasFragment : Fragment() {
 
         adapter = ListaDeComprasAdapter(
             mutableListOf(),
-            onCheckedChanged = { item -> firebaseHelper.updateShoppingItemChecked(item) },
-            onQuantityChanged = { item -> firebaseHelper.updateShoppingItemQuantity(item) },
+            onCheckedChanged = { item -> viewModel.toggleChecked(item) },
+            onQuantityChanged = { item -> viewModel.updateQuantity(item) },
             onLongPress = { item ->
                 adapter.enterSelectionMode(item.id)
                 showContextualBar()
@@ -83,11 +83,11 @@ class ListaDeComprasFragment : Fragment() {
                 adapter.removeItem(item)
                 Snackbar.make(rootView, "'${item.name}' removido", Snackbar.LENGTH_LONG)
                     .setAction("Desfazer") {
-                        firebaseHelper.restoreShoppingItem(item)
+                        viewModel.restoreItem(item)
                     }
                     .addCallback(object : Snackbar.Callback() {
                         override fun onDismissed(snackbar: Snackbar, event: Int) {
-                            if (event != DISMISS_EVENT_ACTION) firebaseHelper.deleteShoppingItem(item.id)
+                            if (event != DISMISS_EVENT_ACTION) viewModel.deleteItem(item)
                         }
                     })
                     .show()
@@ -106,7 +106,7 @@ class ListaDeComprasFragment : Fragment() {
                 .setTitle("Excluir ${selected.size} item(s)?")
                 .setPositiveButton("Excluir") { _, _ ->
                     selected.forEach {
-                        firebaseHelper.deleteShoppingItem(it.id)
+                        viewModel.deleteItem(it)
                         adapter.removeItem(it)
                     }
                     exitSelectionMode()
@@ -124,9 +124,8 @@ class ListaDeComprasFragment : Fragment() {
                 .setPositiveButton("Salvar") { _, _ ->
                     val newName = input.text.toString().trim()
                     if (newName.isNotEmpty()) {
-                        firebaseHelper.renameShoppingItem(item, newName)
+                        viewModel.renameItem(item, newName)
                         exitSelectionMode()
-                        loadListFromFirebase()
                     }
                 }
                 .setNegativeButton("Cancelar", null)
@@ -135,13 +134,11 @@ class ListaDeComprasFragment : Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
 
-        stopListener = firebaseHelper.listenToShoppingItems { items -> adapter.updateItems(items) }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        stopListener?.invoke()
-        stopListener = null
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.items.collect { adapter.updateItems(it) }
+            }
+        }
     }
 
     private fun showContextualBar() {
@@ -167,12 +164,10 @@ class ListaDeComprasFragment : Fragment() {
             .setPositiveButton("Adicionar") { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) {
-                    val item = ShoppingItem(name = name, category = "", quantityToBuy = 1)
-                    firebaseHelper.addShoppingItem(item) { }
+                    viewModel.addItem(name)
                 }
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
-
 }

@@ -9,38 +9,42 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.OnBackPressedCallback
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.FirebaseHelper
 import com.estoque.bomdemais.data.Product
-import com.estoque.bomdemais.data.ShoppingItem
 import com.estoque.bomdemais.utils.SwipeToDeleteCallback
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class ProdutosActivity : AppCompatActivity() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: ProdutosAdapter
-    private lateinit var firebaseHelper: FirebaseHelper
     private lateinit var categoria: String
     private lateinit var fab: FloatingActionButton
     private lateinit var contextualBar: LinearLayout
     private lateinit var textSelectedCount: TextView
     private lateinit var btnContextualRename: ImageButton
-    private var stopListener: (() -> Unit)? = null
+
+    private val viewModel: ProdutosViewModel by viewModels {
+        ProdutosViewModel.factory(intent.getStringExtra("categoria") ?: "")
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_produtos)
 
-        firebaseHelper = FirebaseHelper()
         categoria = intent.getStringExtra("categoria") ?: ""
 
         val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
@@ -59,8 +63,11 @@ class ProdutosActivity : AppCompatActivity() {
         adapter = ProdutosAdapter(
             mutableListOf(),
             onClick = {},
-            onAddToList = { product -> addProductToShoppingList(product) },
-            onQuantityChanged = { product -> firebaseHelper.updateProductQuantity(product) },
+            onAddToList = { product ->
+                viewModel.addToShoppingList(product.name, product.category)
+                Toast.makeText(this, "'${product.name}' adicionado à lista!", Toast.LENGTH_SHORT).show()
+            },
+            onQuantityChanged = { product -> viewModel.updateQuantity(product) },
             onLongPress = { product ->
                 adapter.enterSelectionMode(product.id)
                 showContextualBar()
@@ -79,11 +86,11 @@ class ProdutosActivity : AppCompatActivity() {
                 adapter.removeProduct(product)
                 Snackbar.make(recyclerView, "'${product.name}' removido", Snackbar.LENGTH_LONG)
                     .setAction("Desfazer") {
-                        firebaseHelper.restoreProduct(product)
+                        viewModel.restoreProduct(product)
                     }
                     .addCallback(object : Snackbar.Callback() {
                         override fun onDismissed(snackbar: Snackbar, event: Int) {
-                            if (event != DISMISS_EVENT_ACTION) firebaseHelper.deleteProduct(product.id)
+                            if (event != DISMISS_EVENT_ACTION) viewModel.deleteProduct(product)
                         }
                     })
                     .show()
@@ -102,7 +109,7 @@ class ProdutosActivity : AppCompatActivity() {
                 .setTitle("Excluir ${selected.size} produto(s)?")
                 .setPositiveButton("Excluir") { _, _ ->
                     selected.forEach {
-                        firebaseHelper.deleteProduct(it.id)
+                        viewModel.deleteProduct(it)
                         adapter.removeProduct(it)
                     }
                     exitSelectionMode()
@@ -120,9 +127,8 @@ class ProdutosActivity : AppCompatActivity() {
                 .setPositiveButton("Salvar") { _, _ ->
                     val newName = input.text.toString().trim()
                     if (newName.isNotEmpty()) {
-                        firebaseHelper.renameProduct(product, newName)
+                        viewModel.renameProduct(product, newName)
                         exitSelectionMode()
-                        loadProductsFromFirebase()
                     }
                 }
                 .setNegativeButton("Cancelar", null)
@@ -139,17 +145,13 @@ class ProdutosActivity : AppCompatActivity() {
             }
         })
 
-        stopListener = firebaseHelper.listenToProductsByCategory(categoria) { produtos ->
-            adapter.updateProducts(produtos)
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.products.collect { adapter.updateProducts(it) }
+            }
         }
 
         setupSearchBar()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        stopListener?.invoke()
-        stopListener = null
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -178,18 +180,11 @@ class ProdutosActivity : AppCompatActivity() {
             .setPositiveButton("Adicionar") { _, _ ->
                 val nome = input.text.toString().trim()
                 if (nome.isNotEmpty()) {
-                    addProductToDatabase(nome)
+                    viewModel.addProduct(nome, categoria)
                 }
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }
-
-    private fun addProductToDatabase(nome: String) {
-        firebaseHelper.addProduct(nome, categoria) { product ->
-            val msg = if (product != null) "'$nome' adicionado!" else "Falha ao adicionar produto."
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-        }
     }
 
     private fun setupSearchBar() {
@@ -200,13 +195,5 @@ class ProdutosActivity : AppCompatActivity() {
             }
             override fun afterTextChanged(s: Editable?) {}
         })
-    }
-
-    private fun addProductToShoppingList(product: Product) {
-        val item = ShoppingItem(name = product.name, category = product.category, quantityToBuy = 1)
-        firebaseHelper.addShoppingItem(item) { success ->
-            val msg = if (success) "'${product.name}' adicionado à lista!" else "Falha ao adicionar à lista."
-            Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-        }
     }
 }

@@ -11,28 +11,31 @@ import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.FirebaseHelper
 import com.estoque.bomdemais.utils.SwipeToDeleteCallback
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
+import kotlinx.coroutines.launch
 
 class NotasFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
     private lateinit var adapter: NotasAdapter
-    private lateinit var firebaseHelper: FirebaseHelper
+    private val viewModel: NotasViewModel by viewModels { NotasViewModel.Factory }
     private lateinit var fab: FloatingActionButton
     private lateinit var contextualBar: LinearLayout
     private lateinit var textSelectedCount: TextView
     private lateinit var btnContextualRename: ImageButton
     private lateinit var rootView: View
-    private var stopListener: (() -> Unit)? = null
 
     private val backPressedCallback = object : OnBackPressedCallback(false) {
         override fun handleOnBackPressed() {
@@ -49,8 +52,6 @@ class NotasFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         (activity as AppCompatActivity).supportActionBar?.title = "Notas"
-
-        firebaseHelper = FirebaseHelper()
 
         contextualBar = view.findViewById(R.id.contextual_bar)
         textSelectedCount = view.findViewById(R.id.text_selected_count)
@@ -80,11 +81,11 @@ class NotasFragment : Fragment() {
                 adapter.removeNote(note)
                 Snackbar.make(rootView, "Nota removida", Snackbar.LENGTH_LONG)
                     .setAction("Desfazer") {
-                        firebaseHelper.restoreNote(note)
+                        viewModel.restoreNote(note)
                     }
                     .addCallback(object : Snackbar.Callback() {
                         override fun onDismissed(snackbar: Snackbar, event: Int) {
-                            if (event != DISMISS_EVENT_ACTION) firebaseHelper.deleteNote(note.id)
+                            if (event != DISMISS_EVENT_ACTION) viewModel.deleteNote(note)
                         }
                     })
                     .show()
@@ -103,7 +104,7 @@ class NotasFragment : Fragment() {
                 .setTitle("Excluir ${selected.size} nota(s)?")
                 .setPositiveButton("Excluir") { _, _ ->
                     selected.forEach {
-                        firebaseHelper.deleteNote(it.id)
+                        viewModel.deleteNote(it)
                         adapter.removeNote(it)
                     }
                     exitSelectionMode()
@@ -121,9 +122,8 @@ class NotasFragment : Fragment() {
                 .setPositiveButton("Salvar") { _, _ ->
                     val newText = input.text.toString().trim()
                     if (newText.isNotEmpty()) {
-                        firebaseHelper.renameNote(note, newText)
+                        viewModel.editNote(note, newText)
                         exitSelectionMode()
-                        loadNotesFromFirebase()
                     }
                 }
                 .setNegativeButton("Cancelar", null)
@@ -132,13 +132,11 @@ class NotasFragment : Fragment() {
 
         requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
 
-        stopListener = firebaseHelper.listenToNotes { notes -> adapter.updateNotes(notes) }
-    }
-
-    override fun onDestroyView() {
-        super.onDestroyView()
-        stopListener?.invoke()
-        stopListener = null
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.notes.collect { adapter.updateNotes(it) }
+            }
+        }
     }
 
     private fun showContextualBar() {
@@ -164,11 +162,10 @@ class NotasFragment : Fragment() {
             .setPositiveButton("Adicionar") { _, _ ->
                 val text = input.text.toString().trim()
                 if (text.isNotEmpty()) {
-                    firebaseHelper.addNote(text) { }
+                    viewModel.addNote(text)
                 }
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
-
 }
