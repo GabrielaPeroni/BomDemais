@@ -38,12 +38,11 @@ class FirebaseHelper {
         })
     }
 
-    fun addProduct(name: String, category: String) {
-        val productId = productsRef.push().key
-        val product = Product(id = productId ?: "", name = name, category = category)
-        if (productId != null) {
-            productsRef.child(productId).setValue(product)
-        }
+    fun addProduct(name: String, category: String, callback: (Product?) -> Unit) {
+        val productId = productsRef.push().key ?: return callback(null)
+        val product = Product(id = productId, name = name, category = category, quantity = 0)
+        productsRef.child(productId).setValue(product)
+            .addOnCompleteListener { task -> callback(if (task.isSuccessful) product else null) }
     }
 
     fun getProductsByCategory(category: String, callback: (List<Product>) -> Unit) {

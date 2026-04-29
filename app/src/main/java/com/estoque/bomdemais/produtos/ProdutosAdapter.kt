@@ -7,16 +7,15 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.FirebaseHelper
 import com.estoque.bomdemais.data.Product
 
 class ProdutosAdapter(
     private var productList: MutableList<Product>,
     private val onClick: (Product) -> Unit,
-    private val onAddToList: (Product) -> Unit
+    private val onAddToList: (Product) -> Unit,
+    private val onQuantityChanged: (Product) -> Unit
 ) : RecyclerView.Adapter<ProdutosAdapter.ProdutoViewHolder>() {
 
-    private var firebaseHelper = FirebaseHelper()
     private var filteredList: MutableList<Product> = productList.toMutableList()
 
     class ProdutoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
@@ -39,24 +38,25 @@ class ProdutosAdapter(
         holder.nameTextView.text = product.name
         holder.quantityTextView.text = product.quantity.toString()
         holder.categoryTextView.text = product.category
+        holder.btnAddToList.visibility = View.VISIBLE
 
-        holder.btnAddToList.visibility = if (product.quantity == 0) View.VISIBLE else View.GONE
-        holder.btnAddToList.setOnClickListener {
-            onAddToList(product)
-            holder.btnAddToList.visibility = View.GONE
-        }
+        holder.btnAddToList.setOnClickListener { onAddToList(product) }
 
         holder.btnIncrease.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             product.quantity++
-            firebaseHelper.updateProductQuantity(product)
-            notifyItemChanged(position)
+            onQuantityChanged(product)
+            notifyItemChanged(pos)
         }
 
         holder.btnDecrease.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             if (product.quantity > 0) {
                 product.quantity--
-                firebaseHelper.updateProductQuantity(product)
-                notifyItemChanged(position)
+                onQuantityChanged(product)
+                notifyItemChanged(pos)
             }
         }
 
@@ -66,6 +66,7 @@ class ProdutosAdapter(
     override fun getItemCount() = filteredList.size
 
     fun removeProduct(product: Product) {
+        productList.remove(product)
         val position = filteredList.indexOf(product)
         if (position >= 0) {
             filteredList.removeAt(position)
@@ -80,10 +81,9 @@ class ProdutosAdapter(
         notifyDataSetChanged()
     }
 
-    fun addProduct(name: String) {
-        val newProduct = Product(name = name, quantity = 0)
-        productList.add(0, newProduct)
-        filteredList.add(0, newProduct)
+    fun addProduct(product: Product) {
+        productList.add(0, product)
+        filteredList.add(0, product)
         notifyItemInserted(0)
     }
 

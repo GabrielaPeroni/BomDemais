@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <item
+        android:id="@+id/nav_estoque"
+        android:icon="@drawable/ic_inventory"
+        android:title="Estoque" />
+
+    <item
+        android:id="@+id/nav_lista"
+        android:icon="@android:drawable/ic_menu_agenda"
+        android:title="Lista" />
+
+    <item
+        android:id="@+id/nav_notas"
+        android:icon="@drawable/ic_note"
+        android:title="Notas" />
+
+</menu>

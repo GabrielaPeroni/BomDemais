@@ -41,7 +41,8 @@ class ProdutosActivity : AppCompatActivity() {
         adapter = ProdutosAdapter(
             mutableListOf(),
             onClick = {},
-            onAddToList = { product -> addProductToShoppingList(product) }
+            onAddToList = { product -> addProductToShoppingList(product) },
+            onQuantityChanged = { product -> firebaseHelper.updateProductQuantity(product) }
         )
         recyclerView.adapter = adapter
 
@@ -49,8 +50,12 @@ class ProdutosActivity : AppCompatActivity() {
             showAddProdutoDialog()
         }
 
-        loadProductsFromFirebase()
         setupSearchBar()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        loadProductsFromFirebase()
     }
 
     override fun onSupportNavigateUp(): Boolean {
@@ -59,26 +64,31 @@ class ProdutosActivity : AppCompatActivity() {
     }
 
     private fun showAddProdutoDialog() {
-        val input = com.google.android.material.textfield.TextInputEditText(this)
+        val input = TextInputEditText(this)
         input.hint = "Nome do Produto"
 
         MaterialAlertDialogBuilder(this)
             .setTitle("Adicionar Produto")
             .setView(input)
             .setPositiveButton("Adicionar") { _, _ ->
-                val produto = input.text.toString().trim()
-                if (produto.isNotEmpty()) {
-                    addProductToDatabase(produto)
+                val nome = input.text.toString().trim()
+                if (nome.isNotEmpty()) {
+                    addProductToDatabase(nome)
                 }
             }
             .setNegativeButton("Cancelar", null)
             .show()
     }
 
-    private fun addProductToDatabase(produto: String) {
-        firebaseHelper.addProduct(produto, categoria)
-        Toast.makeText(this, "'$produto' adicionado!", Toast.LENGTH_SHORT).show()
-        adapter.addProduct(produto)
+    private fun addProductToDatabase(nome: String) {
+        firebaseHelper.addProduct(nome, categoria) { product ->
+            if (product != null) {
+                Toast.makeText(this, "'$nome' adicionado!", Toast.LENGTH_SHORT).show()
+                adapter.addProduct(product)
+            } else {
+                Toast.makeText(this, "Falha ao adicionar produto.", Toast.LENGTH_SHORT).show()
+            }
+        }
     }
 
     private fun loadProductsFromFirebase() {

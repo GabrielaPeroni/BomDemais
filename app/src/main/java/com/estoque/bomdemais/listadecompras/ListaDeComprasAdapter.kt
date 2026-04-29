@@ -38,16 +38,20 @@ class ListaDeComprasAdapter(
         holder.textQty.text = item.quantityToBuy.toString()
 
         holder.btnIncrease.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             item.quantityToBuy++
             onQuantityChanged(item)
-            notifyItemChanged(position)
+            notifyItemChanged(pos)
         }
 
         holder.btnDecrease.setOnClickListener {
+            val pos = holder.bindingAdapterPosition
+            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             if (item.quantityToBuy > 1) {
                 item.quantityToBuy--
                 onQuantityChanged(item)
-                notifyItemChanged(position)
+                notifyItemChanged(pos)
             }
         }
 
