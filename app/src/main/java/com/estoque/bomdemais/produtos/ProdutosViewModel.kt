@@ -22,12 +22,14 @@ class ProdutosViewModel(
     val products: StateFlow<List<Product>> = repo.productsByCategory(category)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun addProduct(name: String, category: String) = viewModelScope.launch { repo.addProduct(name, category) }
+    fun addProduct(name: String, category: String, unit: String = "un", minQuantity: Int = 1) =
+        viewModelScope.launch { repo.addProduct(name, category, unit, minQuantity) }
+
     fun deleteProduct(product: Product) = viewModelScope.launch { repo.deleteProduct(product.id) }
     fun restoreProduct(product: Product) = viewModelScope.launch { repo.restoreProduct(product) }
     fun updateQuantity(product: Product) = viewModelScope.launch { repo.updateQuantity(product) }
     fun renameProduct(product: Product, newName: String) = viewModelScope.launch { repo.renameProduct(product, newName) }
-    fun addToShoppingList(name: String, category: String) = viewModelScope.launch { shoppingRepo.addItem(name, category) }
+    fun addToShoppingList(product: Product) = viewModelScope.launch { shoppingRepo.addItem(product.name, product.unit) }
 
     companion object {
         fun factory(category: String): ViewModelProvider.Factory = viewModelFactory {

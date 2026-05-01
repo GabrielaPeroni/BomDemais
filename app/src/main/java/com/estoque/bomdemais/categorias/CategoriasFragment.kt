@@ -1,6 +1,5 @@
 package com.estoque.bomdemais.categorias
 
-import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.Menu
@@ -19,7 +18,8 @@ import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.produtos.ProdutosActivity
+import com.estoque.bomdemais.data.Category
+import com.estoque.bomdemais.produtos.ProdutosFragment
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
@@ -74,11 +74,14 @@ class CategoriasFragment : Fragment() {
 
         adapterCategorias = CategoriasAdapter(
             mutableListOf(),
-            onClick = { categoria ->
-                startActivity(Intent(requireContext(), ProdutosActivity::class.java).putExtra("categoria", categoria))
+            onClick = { category ->
+                parentFragmentManager.beginTransaction()
+                    .add(R.id.fragment_container, ProdutosFragment.newInstance(category.name))
+                    .addToBackStack(null)
+                    .commit()
             },
-            onLongPress = { categoria ->
-                adapterCategorias.enterSelectionMode(categoria)
+            onLongPress = { category ->
+                adapterCategorias.enterSelectionMode(category)
                 actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(actionModeCallback)
                 fab.hide()
             },
@@ -126,15 +129,15 @@ class CategoriasFragment : Fragment() {
     }
 
     private fun handleRename(mode: ActionMode) {
-        val oldName = adapterCategorias.getSelectedItems().firstOrNull() ?: return
-        val input = TextInputEditText(requireContext()).apply { setText(oldName) }
+        val category = adapterCategorias.getSelectedItems().firstOrNull() ?: return
+        val input = TextInputEditText(requireContext()).apply { setText(category.name) }
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Renomear categoria")
             .setView(input)
             .setPositiveButton("Salvar") { _, _ ->
                 val newName = input.text.toString().trim()
-                if (newName.isNotEmpty() && newName != oldName) {
-                    viewModel.renameCategory(oldName, newName) { success ->
+                if (newName.isNotEmpty() && newName != category.name) {
+                    viewModel.renameCategory(category, newName) { success ->
                         if (!success) Toast.makeText(requireContext(), "Falha ao renomear.", Toast.LENGTH_SHORT).show()
                     }
                     mode.finish()

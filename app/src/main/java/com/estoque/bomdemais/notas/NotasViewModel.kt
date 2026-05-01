@@ -17,10 +17,10 @@ class NotasViewModel(private val repo: NotasRepository) : ViewModel() {
     val notes: StateFlow<List<Note>> = repo.notes()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun addNote(text: String) = viewModelScope.launch { repo.addNote(text) }
+    fun addNote(title: String, body: String) = viewModelScope.launch { repo.addNote(title, body) }
     fun deleteNote(note: Note) = viewModelScope.launch { repo.deleteNote(note.id) }
     fun restoreNote(note: Note) = viewModelScope.launch { repo.restoreNote(note) }
-    fun editNote(note: Note, newText: String) = viewModelScope.launch { repo.editNote(note, newText) }
+    fun editNote(note: Note, title: String, body: String) = viewModelScope.launch { repo.editNote(note, title, body) }
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {

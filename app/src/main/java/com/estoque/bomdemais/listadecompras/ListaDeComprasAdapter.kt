@@ -27,7 +27,7 @@ class ListaDeComprasAdapter(
 
     class ItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textName: TextView = view.findViewById(R.id.text_item_name)
-        val textCategory: TextView = view.findViewById(R.id.text_item_category)
+        val textUnit: TextView = view.findViewById(R.id.text_item_category)
         val textQty: TextView = view.findViewById(R.id.text_qty_to_buy)
         val btnIncrease: Button = view.findViewById(R.id.btn_increase)
         val btnDecrease: Button = view.findViewById(R.id.btn_decrease)
@@ -44,8 +44,8 @@ class ListaDeComprasAdapter(
         val isSelected = selectedIds.contains(item.id)
 
         holder.textName.text = item.name
-        holder.textCategory.text = item.category.ifEmpty { "Manual" }
-        holder.textQty.text = item.quantityToBuy.toString()
+        holder.textUnit.text = item.unit
+        holder.textQty.text = item.quantity.toString()
         holder.stepperLayout.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
 
         if (item.isChecked) {
@@ -81,7 +81,7 @@ class ListaDeComprasAdapter(
         holder.btnIncrease.setOnClickListener {
             val pos = holder.bindingAdapterPosition
             if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
-            item.quantityToBuy++
+            item.quantity++
             onQuantityChanged(item)
             notifyItemChanged(pos)
         }
@@ -89,8 +89,8 @@ class ListaDeComprasAdapter(
         holder.btnDecrease.setOnClickListener {
             val pos = holder.bindingAdapterPosition
             if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
-            if (item.quantityToBuy > 1) {
-                item.quantityToBuy--
+            if (item.quantity > 1) {
+                item.quantity--
                 onQuantityChanged(item)
                 notifyItemChanged(pos)
             }

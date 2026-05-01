@@ -1,27 +1,36 @@
 package com.estoque.bomdemais.notas
 
-import android.app.Dialog
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.view.WindowManager
 import android.widget.EditText
 import androidx.appcompat.widget.Toolbar
-import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Note
 
-class NoteEditorFragment : DialogFragment() {
+class NoteEditorFragment : Fragment() {
 
-    private lateinit var editText: EditText
+    private lateinit var editTitle: EditText
+    private lateinit var editBody: EditText
+    private val viewModel: NotasViewModel by viewModels { NotasViewModel.Factory }
     private var existingNote: Note? = null
-    private var onSave: ((String) -> Unit)? = null
-    private var saved = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setStyle(STYLE_NORMAL, R.style.FullScreenDialog)
+        arguments?.let { args ->
+            val noteId = args.getString(ARG_NOTE_ID)
+            if (noteId != null) {
+                existingNote = Note(
+                    id = noteId,
+                    title = args.getString(ARG_NOTE_TITLE, ""),
+                    body = args.getString(ARG_NOTE_BODY, ""),
+                    timestamp = args.getLong(ARG_NOTE_TIMESTAMP, 0)
+                )
+            }
+        }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -32,50 +41,47 @@ class NoteEditorFragment : DialogFragment() {
         super.onViewCreated(view, savedInstanceState)
 
         val toolbar = view.findViewById<Toolbar>(R.id.toolbar_note_editor)
-        editText = view.findViewById(R.id.edit_note_text)
+        editTitle = view.findViewById(R.id.edit_note_title)
+        editBody = view.findViewById(R.id.edit_note_text)
 
-        existingNote?.let { editText.setText(it.text) }
-        editText.requestFocus()
+        existingNote?.let {
+            editTitle.setText(it.title)
+            editBody.setText(it.body)
+        }
+        editBody.requestFocus()
 
-        toolbar.setNavigationOnClickListener { saveAndDismiss() }
-
+        toolbar.setNavigationOnClickListener { saveAndPop() }
         toolbar.inflateMenu(R.menu.note_editor_menu)
         toolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.action_save) {
-                saveAndDismiss()
-                true
-            } else false
+            if (item.itemId == R.id.action_save) { saveAndPop(); true } else false
         }
     }
 
-    override fun onStart() {
-        super.onStart()
-        dialog?.window?.setLayout(WindowManager.LayoutParams.MATCH_PARENT, WindowManager.LayoutParams.MATCH_PARENT)
-        dialog?.window?.setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE)
-    }
-
-    override fun onCancel(dialog: android.content.DialogInterface) {
-        saveAndDismiss()
-        super.onCancel(dialog)
-    }
-
-    private fun saveAndDismiss() {
-        if (saved) return
-        saved = true
-        val text = editText.text.toString().trim()
-        if (text.isNotEmpty()) onSave?.invoke(text)
-        dismiss()
+    private fun saveAndPop() {
+        val title = editTitle.text.toString().trim()
+        val body = editBody.text.toString().trim()
+        if (title.isNotEmpty() || body.isNotEmpty()) {
+            val note = existingNote
+            if (note != null) viewModel.editNote(note, title, body)
+            else viewModel.addNote(title, body)
+        }
+        parentFragmentManager.popBackStack()
     }
 
     companion object {
-        fun forNew(onSave: (String) -> Unit): NoteEditorFragment {
-            return NoteEditorFragment().also { it.onSave = onSave }
-        }
+        private const val ARG_NOTE_ID = "note_id"
+        private const val ARG_NOTE_TITLE = "note_title"
+        private const val ARG_NOTE_BODY = "note_body"
+        private const val ARG_NOTE_TIMESTAMP = "note_timestamp"
 
-        fun forEdit(note: Note, onSave: (String) -> Unit): NoteEditorFragment {
-            return NoteEditorFragment().also {
-                it.existingNote = note
-                it.onSave = onSave
+        fun newInstance(note: Note? = null) = NoteEditorFragment().apply {
+            arguments = Bundle().apply {
+                note?.let {
+                    putString(ARG_NOTE_ID, it.id)
+                    putString(ARG_NOTE_TITLE, it.title)
+                    putString(ARG_NOTE_BODY, it.body)
+                    putLong(ARG_NOTE_TIMESTAMP, it.timestamp)
+                }
             }
         }
     }

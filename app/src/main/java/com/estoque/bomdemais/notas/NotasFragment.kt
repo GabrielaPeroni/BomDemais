@@ -75,8 +75,10 @@ class NotasFragment : Fragment() {
         adapter = NotasAdapter(
             mutableListOf(),
             onTap = { note ->
-                NoteEditorFragment.forEdit(note) { newText -> viewModel.editNote(note, newText) }
-                    .show(childFragmentManager, "edit_note")
+                parentFragmentManager.beginTransaction()
+                    .add(R.id.fragment_container, NoteEditorFragment.newInstance(note))
+                    .addToBackStack(null)
+                    .commit()
             },
             onLongPress = { note ->
                 adapter.enterSelectionMode(note.id)
@@ -108,8 +110,10 @@ class NotasFragment : Fragment() {
         ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView)
 
         fab.setOnClickListener {
-            NoteEditorFragment.forNew { text -> viewModel.addNote(text) }
-                .show(childFragmentManager, "new_note")
+            parentFragmentManager.beginTransaction()
+                .add(R.id.fragment_container, NoteEditorFragment.newInstance())
+                .addToBackStack(null)
+                .commit()
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -149,7 +153,9 @@ class NotasFragment : Fragment() {
     private fun handleEdit(mode: ActionMode) {
         val note = adapter.getSelectedItems().firstOrNull() ?: return
         mode.finish()
-        NoteEditorFragment.forEdit(note) { newText -> viewModel.editNote(note, newText) }
-            .show(childFragmentManager, "edit_note")
+        parentFragmentManager.beginTransaction()
+            .add(R.id.fragment_container, NoteEditorFragment.newInstance(note))
+            .addToBackStack(null)
+            .commit()
     }
 }

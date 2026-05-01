@@ -14,10 +14,10 @@ class CategoriasRepository {
         .also { it.keepSynced(true) }
     private val productsRef = FirebaseDatabase.getInstance().getReference("produtos")
 
-    fun categories(): Flow<List<String>> = callbackFlow {
+    fun categories(): Flow<List<Category>> = callbackFlow {
         val listener = object : ValueEventListener {
             override fun onDataChange(snap: DataSnapshot) {
-                val cats = snap.children.mapNotNull { it.getValue(String::class.java) }
+                val cats = snap.children.mapNotNull { it.getValue(Category::class.java) }
                 trySend(cats)
             }
             override fun onCancelled(e: DatabaseError) { close(e.toException()) }
@@ -28,24 +28,22 @@ class CategoriasRepository {
 
     suspend fun addCategory(name: String): Boolean {
         val key = categoriesRef.push().key ?: return false
-        return try { categoriesRef.child(key).setValue(name).await(); true }
-        catch (e: Exception) { false }
+        return try {
+            categoriesRef.child(key).setValue(Category(id = key, name = name)).await()
+            true
+        } catch (e: Exception) { false }
     }
 
-    suspend fun deleteCategory(name: String) {
-        val snap = categoriesRef.get().await()
-        snap.children.firstOrNull { it.getValue(String::class.java) == name }?.ref?.removeValue()?.await()
-        val products = productsRef.orderByChild("category").equalTo(name).get().await()
+    suspend fun deleteCategory(category: Category) {
+        categoriesRef.child(category.id).removeValue().await()
+        val products = productsRef.orderByChild("category").equalTo(category.name).get().await()
         products.children.forEach { it.ref.removeValue().await() }
     }
 
-    suspend fun renameCategory(oldName: String, newName: String): Boolean {
+    suspend fun renameCategory(category: Category, newName: String): Boolean {
         return try {
-            val snap = categoriesRef.get().await()
-            val key = snap.children.firstOrNull { it.getValue(String::class.java) == oldName }?.key
-                ?: return false
-            categoriesRef.child(key).setValue(newName).await()
-            val products = productsRef.orderByChild("category").equalTo(oldName).get().await()
+            categoriesRef.child(category.id).child("name").setValue(newName).await()
+            val products = productsRef.orderByChild("category").equalTo(category.name).get().await()
             val updates = products.children.mapNotNull { it.key }.associate { "$it/category" to newName }
             if (updates.isNotEmpty()) productsRef.updateChildren(updates).await()
             true

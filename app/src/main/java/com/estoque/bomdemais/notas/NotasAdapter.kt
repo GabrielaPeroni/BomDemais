@@ -41,7 +41,7 @@ class NotasAdapter(
         val note = notes[position]
         val isSelected = selectedIds.contains(note.id)
 
-        holder.textNote.text = note.text
+        holder.textNote.text = note.title.ifEmpty { note.body }
         holder.textTimestamp.text = dateFormat.format(Date(note.timestamp))
 
         (holder.itemView as MaterialCardView).setCardBackgroundColor(

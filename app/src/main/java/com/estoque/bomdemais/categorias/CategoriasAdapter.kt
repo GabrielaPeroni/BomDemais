@@ -7,17 +7,18 @@ import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
+import com.estoque.bomdemais.data.Category
 
 class CategoriasAdapter(
-    var categorias: MutableList<String>,
-    private val onClick: (String) -> Unit,
-    private val onLongPress: (String) -> Unit,
+    var categorias: MutableList<Category>,
+    private val onClick: (Category) -> Unit,
+    private val onLongPress: (Category) -> Unit,
     private val onSelectionChanged: (count: Int) -> Unit
 ) : RecyclerView.Adapter<CategoriasAdapter.CategoriaViewHolder>() {
 
     var isSelectionMode = false
         private set
-    private val selectedNames = mutableSetOf<String>()
+    private val selectedIds = mutableSetOf<String>()
 
     class CategoriaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val frameLayout: FrameLayout = view.findViewById(R.id.frame_layout)
@@ -31,15 +32,15 @@ class CategoriasAdapter(
 
     override fun onBindViewHolder(holder: CategoriaViewHolder, position: Int) {
         val categoria = categorias[position]
-        val isSelected = selectedNames.contains(categoria)
+        val isSelected = selectedIds.contains(categoria.id)
 
-        holder.textViewCategoria.text = categoria
+        holder.textViewCategoria.text = categoria.name
         holder.frameLayout.setBackgroundResource(
             if (isSelected) R.drawable.button_categoria_selected else R.drawable.button_categoria
         )
 
         holder.itemView.setOnClickListener {
-            if (isSelectionMode) toggleSelection(categoria)
+            if (isSelectionMode) toggleSelection(categoria.id)
             else onClick(categoria)
         }
 
@@ -51,47 +52,32 @@ class CategoriasAdapter(
 
     override fun getItemCount() = categorias.size
 
-    fun addCategoria(categoria: String) {
-        if (!categorias.contains(categoria)) {
-            categorias.add(0, categoria)
-            notifyItemInserted(0)
-        }
-    }
-
-    fun removeCategoria(name: String) {
-        val position = categorias.indexOf(name)
+    fun removeCategoria(category: Category) {
+        val position = categorias.indexOfFirst { it.id == category.id }
         if (position >= 0) {
             categorias.removeAt(position)
             notifyItemRemoved(position)
         }
     }
 
-    fun renameCategoria(oldName: String, newName: String) {
-        val position = categorias.indexOf(oldName)
-        if (position >= 0) {
-            categorias[position] = newName
-            notifyItemChanged(position)
-        }
-    }
-
-    fun enterSelectionMode(name: String) {
+    fun enterSelectionMode(category: Category) {
         isSelectionMode = true
-        selectedNames.add(name)
+        selectedIds.add(category.id)
         notifyDataSetChanged()
-        onSelectionChanged(selectedNames.size)
+        onSelectionChanged(selectedIds.size)
     }
 
     fun exitSelectionMode() {
         isSelectionMode = false
-        selectedNames.clear()
+        selectedIds.clear()
         notifyDataSetChanged()
     }
 
-    fun getSelectedItems(): List<String> = categorias.filter { selectedNames.contains(it) }
+    fun getSelectedItems(): List<Category> = categorias.filter { selectedIds.contains(it.id) }
 
-    private fun toggleSelection(name: String) {
-        if (selectedNames.contains(name)) selectedNames.remove(name) else selectedNames.add(name)
+    private fun toggleSelection(id: String) {
+        if (selectedIds.contains(id)) selectedIds.remove(id) else selectedIds.add(id)
         notifyDataSetChanged()
-        onSelectionChanged(selectedNames.size)
+        onSelectionChanged(selectedIds.size)
     }
 }
