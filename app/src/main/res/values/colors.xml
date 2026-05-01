@@ -6,4 +6,5 @@
     <color name="pink">#C71585</color>
     <color name="Orchid">#DA70D6</color>
     <color name="colorPurpleContainer">#F5D6F7</color>
+    <color name="card_selected_bg">#EDD8EE</color>
 </resources>

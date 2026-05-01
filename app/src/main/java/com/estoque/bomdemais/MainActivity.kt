@@ -42,6 +42,13 @@ class MainActivity : AppCompatActivity() {
             active = supportFragmentManager.fragments.firstOrNull { !it.isHidden } ?: estoque
         }
 
+        val toolbar = findViewById<MaterialToolbar>(R.id.toolbar)
+        val tabTitles = mapOf(
+            R.id.nav_estoque to "Estoque",
+            R.id.nav_lista to "Lista de Compras",
+            R.id.nav_notas to "Notas"
+        )
+
         findViewById<BottomNavigationView>(R.id.bottom_nav).setOnItemSelectedListener { item ->
             val next: Fragment = when (item.itemId) {
                 R.id.nav_estoque -> estoque
@@ -56,6 +63,7 @@ class MainActivity : AppCompatActivity() {
                     .commit()
                 active = next
             }
+            toolbar.title = tabTitles[item.itemId]
             true
         }
     }

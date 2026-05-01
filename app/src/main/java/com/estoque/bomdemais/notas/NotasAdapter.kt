@@ -3,17 +3,20 @@ package com.estoque.bomdemais.notas
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Note
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
 class NotasAdapter(
     private val notes: MutableList<Note>,
+    private val onTap: (Note) -> Unit,
     private val onLongPress: (Note) -> Unit,
     private val onSelectionChanged: (count: Int) -> Unit
 ) : RecyclerView.Adapter<NotasAdapter.NotaViewHolder>() {
@@ -27,7 +30,6 @@ class NotasAdapter(
     class NotaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textNote: TextView = view.findViewById(R.id.text_nota)
         val textTimestamp: TextView = view.findViewById(R.id.text_timestamp)
-        val checkboxSelect: CheckBox = view.findViewById(R.id.checkbox_select)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotaViewHolder {
@@ -37,14 +39,19 @@ class NotasAdapter(
 
     override fun onBindViewHolder(holder: NotaViewHolder, position: Int) {
         val note = notes[position]
+        val isSelected = selectedIds.contains(note.id)
+
         holder.textNote.text = note.text
         holder.textTimestamp.text = dateFormat.format(Date(note.timestamp))
 
-        holder.checkboxSelect.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
-        holder.checkboxSelect.isChecked = selectedIds.contains(note.id)
+        (holder.itemView as MaterialCardView).setCardBackgroundColor(
+            if (isSelected) ContextCompat.getColor(holder.itemView.context, R.color.card_selected_bg)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+        )
 
         holder.itemView.setOnClickListener {
             if (isSelectionMode) toggleSelection(note.id)
+            else onTap(note)
         }
 
         holder.itemView.setOnLongClickListener {

@@ -3,15 +3,14 @@ package com.estoque.bomdemais.categorias
 import android.content.Intent
 import android.os.Bundle
 import android.view.LayoutInflater
+import android.view.Menu
+import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.TextView
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -32,13 +31,33 @@ class CategoriasFragment : Fragment() {
     private lateinit var adapterCategorias: CategoriasAdapter
     private val viewModel: CategoriasViewModel by viewModels { CategoriasViewModel.Factory }
     private lateinit var fab: FloatingActionButton
-    private lateinit var contextualBar: LinearLayout
-    private lateinit var textSelectedCount: TextView
-    private lateinit var btnContextualRename: ImageButton
+    private var actionMode: ActionMode? = null
 
-    private val backPressedCallback = object : OnBackPressedCallback(false) {
-        override fun handleOnBackPressed() {
-            exitSelectionMode()
+    private val actionModeCallback = object : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            mode.menuInflater.inflate(R.menu.contextual_menu, menu)
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+            val count = adapterCategorias.getSelectedItems().size
+            mode.title = "$count selecionado(s)"
+            menu.findItem(R.id.action_rename)?.isVisible = (count == 1)
+            return true
+        }
+
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            return when (item.itemId) {
+                R.id.action_delete -> { handleDelete(mode); true }
+                R.id.action_rename -> { handleRename(mode); true }
+                else -> false
+            }
+        }
+
+        override fun onDestroyActionMode(mode: ActionMode) {
+            actionMode = null
+            adapterCategorias.exitSelectionMode()
+            fab.show()
         }
     }
 
@@ -49,13 +68,7 @@ class CategoriasFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        (activity as AppCompatActivity).supportActionBar?.title = "Estoque"
-
-        contextualBar = view.findViewById(R.id.contextual_bar)
-        textSelectedCount = view.findViewById(R.id.text_selected_count)
-        btnContextualRename = view.findViewById(R.id.btn_contextual_rename)
         fab = view.findViewById(R.id.fab_add_categoria)
-
         recyclerViewCategorias = view.findViewById(R.id.recycler_view_categorias)
         recyclerViewCategorias.layoutManager = GridLayoutManager(requireContext(), 2)
 
@@ -66,54 +79,14 @@ class CategoriasFragment : Fragment() {
             },
             onLongPress = { categoria ->
                 adapterCategorias.enterSelectionMode(categoria)
-                showContextualBar()
+                actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(actionModeCallback)
+                fab.hide()
             },
-            onSelectionChanged = { count ->
-                textSelectedCount.text = "$count selecionado(s)"
-                btnContextualRename.visibility = if (count == 1) View.VISIBLE else View.GONE
-            }
+            onSelectionChanged = { actionMode?.invalidate() }
         )
         recyclerViewCategorias.adapter = adapterCategorias
 
         fab.setOnClickListener { showAddCategoriaDialog() }
-
-        view.findViewById<ImageButton>(R.id.btn_contextual_close).setOnClickListener { exitSelectionMode() }
-
-        view.findViewById<ImageButton>(R.id.btn_contextual_delete).setOnClickListener {
-            val selected = adapterCategorias.getSelectedItems()
-            if (selected.isEmpty()) return@setOnClickListener
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Excluir ${selected.size} categoria(s)?")
-                .setMessage("Todos os produtos dentro dessas categorias também serão excluídos.")
-                .setPositiveButton("Excluir") { _, _ ->
-                    viewModel.deleteCategories(selected)
-                    selected.forEach { adapterCategorias.removeCategoria(it) }
-                    exitSelectionMode()
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        }
-
-        btnContextualRename.setOnClickListener {
-            val oldName = adapterCategorias.getSelectedItems().firstOrNull() ?: return@setOnClickListener
-            val input = TextInputEditText(requireContext()).apply { setText(oldName) }
-            MaterialAlertDialogBuilder(requireContext())
-                .setTitle("Renomear categoria")
-                .setView(input)
-                .setPositiveButton("Salvar") { _, _ ->
-                    val newName = input.text.toString().trim()
-                    if (newName.isNotEmpty() && newName != oldName) {
-                        viewModel.renameCategory(oldName, newName) { success ->
-                            if (!success) Toast.makeText(requireContext(), "Falha ao renomear.", Toast.LENGTH_SHORT).show()
-                        }
-                        exitSelectionMode()
-                    }
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        }
-
-        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, backPressedCallback)
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -126,31 +99,59 @@ class CategoriasFragment : Fragment() {
         }
     }
 
-    private fun showContextualBar() {
-        contextualBar.visibility = View.VISIBLE
-        fab.hide()
-        backPressedCallback.isEnabled = true
+    override fun onHiddenChanged(hidden: Boolean) {
+        super.onHiddenChanged(hidden)
+        if (hidden) { actionMode?.finish(); actionMode = null }
     }
 
-    private fun exitSelectionMode() {
-        adapterCategorias.exitSelectionMode()
-        contextualBar.visibility = View.GONE
-        fab.show()
-        backPressedCallback.isEnabled = false
+    override fun onDestroyView() {
+        super.onDestroyView()
+        actionMode?.finish()
+        actionMode = null
+    }
+
+    private fun handleDelete(mode: ActionMode) {
+        val selected = adapterCategorias.getSelectedItems()
+        if (selected.isEmpty()) return
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Excluir ${selected.size} categoria(s)?")
+            .setMessage("Todos os produtos dentro dessas categorias também serão excluídos.")
+            .setPositiveButton("Excluir") { _, _ ->
+                viewModel.deleteCategories(selected)
+                selected.forEach { adapterCategorias.removeCategoria(it) }
+                mode.finish()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun handleRename(mode: ActionMode) {
+        val oldName = adapterCategorias.getSelectedItems().firstOrNull() ?: return
+        val input = TextInputEditText(requireContext()).apply { setText(oldName) }
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Renomear categoria")
+            .setView(input)
+            .setPositiveButton("Salvar") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty() && newName != oldName) {
+                    viewModel.renameCategory(oldName, newName) { success ->
+                        if (!success) Toast.makeText(requireContext(), "Falha ao renomear.", Toast.LENGTH_SHORT).show()
+                    }
+                    mode.finish()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun showAddCategoriaDialog() {
-        val input = EditText(requireContext())
-        input.hint = "Nome da Categoria"
-
+        val input = EditText(requireContext()).apply { hint = "Nome da Categoria" }
         MaterialAlertDialogBuilder(requireActivity())
             .setTitle("Adicionar Categoria")
             .setView(input)
             .setPositiveButton("Adicionar") { _, _ ->
                 val categoria = input.text.toString().trim()
-                if (categoria.isNotEmpty()) {
-                    viewModel.addCategory(categoria)
-                }
+                if (categoria.isNotEmpty()) viewModel.addCategory(categoria)
             }
             .setNegativeButton("Cancelar", null)
             .show()

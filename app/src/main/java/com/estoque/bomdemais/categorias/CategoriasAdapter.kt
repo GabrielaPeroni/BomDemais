@@ -3,7 +3,6 @@ package com.estoque.bomdemais.categorias
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
@@ -23,7 +22,6 @@ class CategoriasAdapter(
     class CategoriaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val frameLayout: FrameLayout = view.findViewById(R.id.frame_layout)
         val textViewCategoria: TextView = view.findViewById(R.id.text_categoria)
-        val checkboxSelect: CheckBox = view.findViewById(R.id.checkbox_select)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoriaViewHolder {
@@ -33,18 +31,16 @@ class CategoriasAdapter(
 
     override fun onBindViewHolder(holder: CategoriaViewHolder, position: Int) {
         val categoria = categorias[position]
-        holder.textViewCategoria.text = categoria
-        holder.frameLayout.setBackgroundResource(R.drawable.button_categoria)
+        val isSelected = selectedNames.contains(categoria)
 
-        holder.checkboxSelect.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
-        holder.checkboxSelect.isChecked = selectedNames.contains(categoria)
+        holder.textViewCategoria.text = categoria
+        holder.frameLayout.setBackgroundResource(
+            if (isSelected) R.drawable.button_categoria_selected else R.drawable.button_categoria
+        )
 
         holder.itemView.setOnClickListener {
-            if (isSelectionMode) {
-                toggleSelection(categoria)
-            } else {
-                onClick(categoria)
-            }
+            if (isSelectionMode) toggleSelection(categoria)
+            else onClick(categoria)
         }
 
         holder.itemView.setOnLongClickListener {

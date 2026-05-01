@@ -3,14 +3,12 @@ package com.estoque.bomdemais.produtos
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.View
-import android.widget.ImageButton
-import android.widget.LinearLayout
-import android.widget.TextView
+import android.view.Menu
+import android.view.MenuItem
 import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.view.ActionMode
+import androidx.activity.viewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -18,7 +16,6 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.Product
 import com.estoque.bomdemais.utils.SwipeToDeleteCallback
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -33,12 +30,38 @@ class ProdutosActivity : AppCompatActivity() {
     private lateinit var adapter: ProdutosAdapter
     private lateinit var categoria: String
     private lateinit var fab: FloatingActionButton
-    private lateinit var contextualBar: LinearLayout
-    private lateinit var textSelectedCount: TextView
-    private lateinit var btnContextualRename: ImageButton
+    private var actionMode: ActionMode? = null
 
     private val viewModel: ProdutosViewModel by viewModels {
         ProdutosViewModel.factory(intent.getStringExtra("categoria") ?: "")
+    }
+
+    private val actionModeCallback = object : ActionMode.Callback {
+        override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
+            mode.menuInflater.inflate(R.menu.contextual_menu, menu)
+            return true
+        }
+
+        override fun onPrepareActionMode(mode: ActionMode, menu: Menu): Boolean {
+            val count = adapter.getSelectedItems().size
+            mode.title = "$count selecionado(s)"
+            menu.findItem(R.id.action_rename)?.isVisible = (count == 1)
+            return true
+        }
+
+        override fun onActionItemClicked(mode: ActionMode, item: MenuItem): Boolean {
+            return when (item.itemId) {
+                R.id.action_delete -> { handleDelete(mode); true }
+                R.id.action_rename -> { handleRename(mode); true }
+                else -> false
+            }
+        }
+
+        override fun onDestroyActionMode(mode: ActionMode) {
+            actionMode = null
+            adapter.exitSelectionMode()
+            fab.show()
+        }
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,11 +75,7 @@ class ProdutosActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
         toolbar.title = categoria
 
-        contextualBar = findViewById(R.id.contextual_bar)
-        textSelectedCount = findViewById(R.id.text_selected_count)
-        btnContextualRename = findViewById(R.id.btn_contextual_rename)
         fab = findViewById(R.id.fab_add_produto)
-
         recyclerView = findViewById(R.id.recycler_view_produtos)
         recyclerView.layoutManager = LinearLayoutManager(this)
 
@@ -70,12 +89,10 @@ class ProdutosActivity : AppCompatActivity() {
             onQuantityChanged = { product -> viewModel.updateQuantity(product) },
             onLongPress = { product ->
                 adapter.enterSelectionMode(product.id)
-                showContextualBar()
+                actionMode = startSupportActionMode(actionModeCallback)
+                fab.hide()
             },
-            onSelectionChanged = { count ->
-                textSelectedCount.text = "$count selecionado(s)"
-                btnContextualRename.visibility = if (count == 1) View.VISIBLE else View.GONE
-            }
+            onSelectionChanged = { actionMode?.invalidate() }
         )
         recyclerView.adapter = adapter
 
@@ -86,6 +103,7 @@ class ProdutosActivity : AppCompatActivity() {
                 adapter.removeProduct(product)
                 Snackbar.make(recyclerView, "'${product.name}' removido", Snackbar.LENGTH_LONG)
                     .setAction("Desfazer") {
+                        adapter.addProduct(product)
                         viewModel.restoreProduct(product)
                     }
                     .addCallback(object : Snackbar.Callback() {
@@ -99,51 +117,6 @@ class ProdutosActivity : AppCompatActivity() {
         ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView)
 
         fab.setOnClickListener { showAddProdutoDialog() }
-
-        findViewById<ImageButton>(R.id.btn_contextual_close).setOnClickListener { exitSelectionMode() }
-
-        findViewById<ImageButton>(R.id.btn_contextual_delete).setOnClickListener {
-            val selected = adapter.getSelectedItems()
-            if (selected.isEmpty()) return@setOnClickListener
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Excluir ${selected.size} produto(s)?")
-                .setPositiveButton("Excluir") { _, _ ->
-                    selected.forEach {
-                        viewModel.deleteProduct(it)
-                        adapter.removeProduct(it)
-                    }
-                    exitSelectionMode()
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        }
-
-        btnContextualRename.setOnClickListener {
-            val product = adapter.getSelectedItems().firstOrNull() ?: return@setOnClickListener
-            val input = TextInputEditText(this).apply { setText(product.name) }
-            MaterialAlertDialogBuilder(this)
-                .setTitle("Renomear produto")
-                .setView(input)
-                .setPositiveButton("Salvar") { _, _ ->
-                    val newName = input.text.toString().trim()
-                    if (newName.isNotEmpty()) {
-                        viewModel.renameProduct(product, newName)
-                        exitSelectionMode()
-                    }
-                }
-                .setNegativeButton("Cancelar", null)
-                .show()
-        }
-
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            override fun handleOnBackPressed() {
-                if (adapter.isSelectionMode) {
-                    exitSelectionMode()
-                } else {
-                    finish()
-                }
-            }
-        })
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -159,29 +132,47 @@ class ProdutosActivity : AppCompatActivity() {
         return true
     }
 
-    private fun showContextualBar() {
-        contextualBar.visibility = View.VISIBLE
-        fab.hide()
+    private fun handleDelete(mode: ActionMode) {
+        val selected = adapter.getSelectedItems()
+        if (selected.isEmpty()) return
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Excluir ${selected.size} produto(s)?")
+            .setPositiveButton("Excluir") { _, _ ->
+                selected.forEach {
+                    viewModel.deleteProduct(it)
+                    adapter.removeProduct(it)
+                }
+                mode.finish()
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
-    private fun exitSelectionMode() {
-        adapter.exitSelectionMode()
-        contextualBar.visibility = View.GONE
-        fab.show()
+    private fun handleRename(mode: ActionMode) {
+        val product = adapter.getSelectedItems().firstOrNull() ?: return
+        val input = TextInputEditText(this).apply { setText(product.name) }
+        MaterialAlertDialogBuilder(this)
+            .setTitle("Renomear produto")
+            .setView(input)
+            .setPositiveButton("Salvar") { _, _ ->
+                val newName = input.text.toString().trim()
+                if (newName.isNotEmpty()) {
+                    viewModel.renameProduct(product, newName)
+                    mode.finish()
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun showAddProdutoDialog() {
-        val input = TextInputEditText(this)
-        input.hint = "Nome do Produto"
-
+        val input = TextInputEditText(this).apply { hint = "Nome do Produto" }
         MaterialAlertDialogBuilder(this)
             .setTitle("Adicionar Produto")
             .setView(input)
             .setPositiveButton("Adicionar") { _, _ ->
                 val nome = input.text.toString().trim()
-                if (nome.isNotEmpty()) {
-                    viewModel.addProduct(nome, categoria)
-                }
+                if (nome.isNotEmpty()) viewModel.addProduct(nome, categoria)
             }
             .setNegativeButton("Cancelar", null)
             .show()
