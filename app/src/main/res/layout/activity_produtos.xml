@@ -15,10 +15,10 @@
             android:id="@+id/toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            app:titleTextColor="@color/white"
+            app:titleTextColor="?attr/colorOnPrimary"
             app:navigationIcon="@drawable/left_return_arrow"
-            app:navigationIconTint="@color/white"
-            android:background="@color/purple" />
+            app:navigationIconTint="?attr/colorOnPrimary"
+            android:background="?attr/colorPrimary" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

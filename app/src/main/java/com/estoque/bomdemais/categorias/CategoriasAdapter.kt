@@ -38,6 +38,9 @@ class CategoriasAdapter(
         holder.frameLayout.setBackgroundResource(
             if (isSelected) R.drawable.button_categoria_selected else R.drawable.button_categoria
         )
+        holder.textViewCategoria.setTextColor(
+            if (isSelected) 0xFF28003F.toInt() else 0xFFFFFFFF.toInt()
+        )
 
         holder.itemView.setOnClickListener {
             if (isSelectionMode) toggleSelection(categoria.id)

@@ -1,10 +1,46 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
+    <!-- MD3 Primary — #6B3A80 -->
+    <color name="md_theme_light_primary">#7B3D9C</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#F3D9FF</color>
+    <color name="md_theme_light_onPrimaryContainer">#28003F</color>
+
+    <!-- MD3 Secondary — #854B70 -->
+    <color name="md_theme_light_secondary">#864D72</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#FFD8EF</color>
+    <color name="md_theme_light_onSecondaryContainer">#36002B</color>
+
+    <!-- MD3 Tertiary — #A63A32 -->
+    <color name="md_theme_light_tertiary">#A63A32</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_tertiaryContainer">#FFDAD7</color>
+    <color name="md_theme_light_onTertiaryContainer">#3C0400</color>
+
+    <!-- MD3 Error -->
+    <color name="md_theme_light_error">#B3261E</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_errorContainer">#F9DEDC</color>
+    <color name="md_theme_light_onErrorContainer">#410E0B</color>
+
+    <!-- MD3 Surface & Neutral -->
+    <color name="md_theme_light_background">#FFF7FF</color>
+    <color name="md_theme_light_onBackground">#1D1B1E</color>
+    <color name="md_theme_light_surface">#FFF7FF</color>
+    <color name="md_theme_light_onSurface">#1D1B1E</color>
+    <color name="md_theme_light_surfaceVariant">#EDE0EF</color>
+    <color name="md_theme_light_onSurfaceVariant">#4A454E</color>
+    <color name="md_theme_light_outline">#7C7481</color>
+    <color name="md_theme_light_outlineVariant">#CDC4D0</color>
+    <color name="md_theme_light_scrim">#000000</color>
+
+    <!-- Fixed semantic — outside tonal system -->
+    <color name="colorHighlight">#FFBD5F</color>
+
+    <!-- Legacy aliases kept for existing layouts that still reference them -->
     <color name="white">#FFFFFFFF</color>
-    <color name="purple">#6b256e</color>
-    <color name="pink">#C71585</color>
-    <color name="Orchid">#DA70D6</color>
-    <color name="colorPurpleContainer">#F5D6F7</color>
-    <color name="card_selected_bg">#EDD8EE</color>
+    <color name="black">#FF000000</color>
+    <color name="purple">#7B3D9C</color>
+    <color name="card_selected_bg">#F3D9FF</color>
 </resources>

@@ -25,12 +25,14 @@ import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
+
 class CategoriasFragment : Fragment() {
 
     private lateinit var recyclerViewCategorias: RecyclerView
     private lateinit var adapterCategorias: CategoriasAdapter
     private val viewModel: CategoriasViewModel by viewModels { CategoriasViewModel.Factory }
     private lateinit var fab: FloatingActionButton
+    private lateinit var emptyState: View
     private var actionMode: ActionMode? = null
 
     private val actionModeCallback = object : ActionMode.Callback {
@@ -69,6 +71,7 @@ class CategoriasFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         fab = view.findViewById(R.id.fab_add_categoria)
+        emptyState = view.findViewById(R.id.empty_state)
         recyclerViewCategorias = view.findViewById(R.id.recycler_view_categorias)
         recyclerViewCategorias.layoutManager = GridLayoutManager(requireContext(), 2)
 
@@ -97,6 +100,8 @@ class CategoriasFragment : Fragment() {
                     adapterCategorias.categorias.clear()
                     adapterCategorias.categorias.addAll(cats)
                     adapterCategorias.notifyDataSetChanged()
+                    emptyState.visibility = if (cats.isEmpty()) View.VISIBLE else View.GONE
+                    recyclerViewCategorias.visibility = if (cats.isEmpty()) View.GONE else View.VISIBLE
                 }
             }
         }
