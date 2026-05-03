@@ -6,7 +6,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
 import androidx.fragment.app.Fragment
@@ -33,6 +32,7 @@ class ListaDeComprasFragment : Fragment() {
     private val viewModel: ListaDeComprasViewModel by viewModels { ListaDeComprasViewModel.Factory }
     private lateinit var fab: FloatingActionButton
     private lateinit var rootView: View
+    private lateinit var emptyState: View
     private var actionMode: ActionMode? = null
 
     private val actionModeCallback = object : ActionMode.Callback {
@@ -72,6 +72,7 @@ class ListaDeComprasFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         fab = view.findViewById(R.id.fab_add_item)
+        emptyState = view.findViewById(R.id.empty_state)
         recyclerView = view.findViewById(R.id.recycler_view_lista)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
@@ -112,7 +113,10 @@ class ListaDeComprasFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.items.collect { adapter.updateItems(it) }
+                viewModel.items.collect {
+                    adapter.updateItems(it)
+                    emptyState.visibility = if (it.isEmpty()) View.VISIBLE else View.GONE
+                }
             }
         }
     }
@@ -162,15 +166,24 @@ class ListaDeComprasFragment : Fragment() {
     }
 
     private fun showAddItemDialog() {
-        val input = EditText(requireContext()).apply { hint = "Nome do item" }
-        MaterialAlertDialogBuilder(requireActivity())
+        val padding = (20 * resources.displayMetrics.density).toInt()
+        val input = com.google.android.material.textfield.TextInputEditText(requireContext()).apply {
+            hint = "Nome do item"
+        }
+        val container = android.widget.FrameLayout(requireContext()).apply {
+            setPadding(padding, 0, padding, 0)
+            addView(input)
+        }
+        val dialog = MaterialAlertDialogBuilder(requireActivity())
             .setTitle("Adicionar à lista")
-            .setView(input)
+            .setView(container)
             .setPositiveButton("Adicionar") { _, _ ->
                 val name = input.text.toString().trim()
                 if (name.isNotEmpty()) viewModel.addItem(name)
             }
             .setNegativeButton("Cancelar", null)
             .show()
+        input.requestFocus()
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 }

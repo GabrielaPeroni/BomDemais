@@ -43,8 +43,9 @@
             android:layout_height="wrap_content"
             android:text="Pouco estoque"
             android:textSize="10sp"
-            android:textColor="#3C0400"
+            android:textColor="?attr/colorOnTertiaryContainer"
             android:background="@drawable/badge_low_stock_bg"
+            android:backgroundTint="?attr/colorTertiaryContainer"
             android:paddingHorizontal="6dp"
             android:paddingVertical="2dp"
             android:layout_marginTop="4dp"
@@ -67,8 +68,9 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/button_left_background"
+                android:backgroundTint="?attr/colorSecondary"
                 android:text="−"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnSecondary"
                 android:textSize="20sp"
                 android:padding="0dp" />
 
@@ -86,8 +88,9 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/button_right_background"
+                android:backgroundTint="?attr/colorSecondary"
                 android:text="+"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnSecondary"
                 android:textSize="20sp"
                 android:padding="0dp" />
 

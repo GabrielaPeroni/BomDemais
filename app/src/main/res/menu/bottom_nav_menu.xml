@@ -12,13 +12,13 @@
         android:title="Lista" />
 
     <item
-        android:id="@+id/nav_notas"
-        android:icon="@drawable/ic_note"
-        android:title="Notas" />
-
-    <item
         android:id="@+id/nav_financeiro"
         android:icon="@drawable/ic_financeiro"
         android:title="Financeiro" />
+
+    <item
+        android:id="@+id/nav_notas"
+        android:icon="@drawable/ic_note"
+        android:title="Notas" />
 
 </menu>

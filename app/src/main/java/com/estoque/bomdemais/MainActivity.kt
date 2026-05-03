@@ -80,10 +80,15 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
+        toolbar.title = tabTitles[bottomNav.selectedItemId]
+
         supportFragmentManager.addOnBackStackChangedListener {
             val hasBack = supportFragmentManager.backStackEntryCount > 0
             bottomNav.visibility = if (hasBack) android.view.View.GONE else android.view.View.VISIBLE
-            if (!hasBack) toolbar.navigationIcon = null
+            if (!hasBack) {
+                toolbar.navigationIcon = null
+                toolbar.title = tabTitles[bottomNav.selectedItemId]
+            }
         }
 
         bottomNav.setOnItemSelectedListener { item ->

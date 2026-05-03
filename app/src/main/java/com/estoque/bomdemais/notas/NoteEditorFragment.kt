@@ -5,11 +5,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import androidx.appcompat.widget.Toolbar
+import androidx.activity.OnBackPressedCallback
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Note
+import com.google.android.material.appbar.MaterialToolbar
 
 class NoteEditorFragment : Fragment() {
 
@@ -40,7 +42,15 @@ class NoteEditorFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val toolbar = view.findViewById<Toolbar>(R.id.toolbar_note_editor)
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.title = ""
+        toolbar.navigationIcon = ContextCompat.getDrawable(requireContext(), R.drawable.left_return_arrow)
+        toolbar.setNavigationOnClickListener { saveAndPop() }
+
+        requireActivity().onBackPressedDispatcher.addCallback(viewLifecycleOwner, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() { saveAndPop() }
+        })
+
         editTitle = view.findViewById(R.id.edit_note_title)
         editBody = view.findViewById(R.id.edit_note_text)
 
@@ -49,12 +59,12 @@ class NoteEditorFragment : Fragment() {
             editBody.setText(it.body)
         }
         editBody.requestFocus()
+    }
 
-        toolbar.setNavigationOnClickListener { saveAndPop() }
-        toolbar.inflateMenu(R.menu.note_editor_menu)
-        toolbar.setOnMenuItemClickListener { item ->
-            if (item.itemId == R.id.action_save) { saveAndPop(); true } else false
-        }
+    override fun onDestroyView() {
+        super.onDestroyView()
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.navigationIcon = null
     }
 
     private fun saveAndPop() {

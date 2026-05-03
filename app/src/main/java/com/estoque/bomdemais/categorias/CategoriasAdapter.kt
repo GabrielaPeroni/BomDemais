@@ -1,5 +1,6 @@
 package com.estoque.bomdemais.categorias
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -8,6 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Category
+import com.google.android.material.color.MaterialColors
 
 class CategoriasAdapter(
     var categorias: MutableList<Category>,
@@ -33,14 +35,22 @@ class CategoriasAdapter(
     override fun onBindViewHolder(holder: CategoriaViewHolder, position: Int) {
         val categoria = categorias[position]
         val isSelected = selectedIds.contains(categoria.id)
+        val view = holder.itemView
 
         holder.textViewCategoria.text = categoria.name
-        holder.frameLayout.setBackgroundResource(
-            if (isSelected) R.drawable.button_categoria_selected else R.drawable.button_categoria
-        )
-        holder.textViewCategoria.setTextColor(
-            if (isSelected) 0xFF28003F.toInt() else 0xFFFFFFFF.toInt()
-        )
+
+        val bgColor = if (isSelected)
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimaryContainer, 0)
+        else
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimary, 0)
+
+        val textColor = if (isSelected)
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnPrimaryContainer, 0)
+        else
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnPrimary, 0)
+
+        holder.frameLayout.backgroundTintList = ColorStateList.valueOf(bgColor)
+        holder.textViewCategoria.setTextColor(textColor)
 
         holder.itemView.setOnClickListener {
             if (isSelectionMode) toggleSelection(categoria.id)

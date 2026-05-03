@@ -34,8 +34,10 @@
         <item name="colorOutline">@color/md_theme_light_outline</item>
         <item name="colorOutlineVariant">@color/md_theme_light_outlineVariant</item>
 
-        <!-- Typography -->
-        <item name="android:fontFamily">@font/nunito</item>
+        <!-- Action mode (long-press contextual bar) -->
+        <item name="windowActionModeOverlay">true</item>
+        <item name="actionModeBackground">@color/md_theme_light_primary</item>
+        <item name="actionModeCloseDrawable">@drawable/left_return_arrow</item>
 
         <!-- System bars -->
         <item name="android:statusBarColor" tools:targetApi="l">@color/md_theme_light_primary</item>

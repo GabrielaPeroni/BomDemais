@@ -1,8 +1,6 @@
 package com.estoque.bomdemais.produtos
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -11,6 +9,7 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -74,17 +73,19 @@ class ProdutosFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        return inflater.inflate(R.layout.activity_produtos, container, false)
+        return inflater.inflate(R.layout.fragment_produtos, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        val toolbar = view.findViewById<MaterialToolbar>(R.id.toolbar)
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.toolbar)
         toolbar.title = categoria
+        toolbar.navigationIcon = ContextCompat.getDrawable(requireContext(), R.drawable.left_return_arrow)
         toolbar.setNavigationOnClickListener { parentFragmentManager.popBackStack() }
 
         fab = view.findViewById(R.id.fab_add_produto)
+        val emptyState = view.findViewById<View>(R.id.empty_state_produtos)
         recyclerView = view.findViewById(R.id.recycler_view_produtos)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
@@ -129,11 +130,13 @@ class ProdutosFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.products.collect { adapter.updateProducts(it) }
+                viewModel.products.collect { products ->
+                    if (products == null) return@collect
+                    adapter.updateProducts(products)
+                    emptyState.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
+                }
             }
         }
-
-        setupSearchBar(view)
     }
 
     override fun onDestroyView() {
@@ -176,24 +179,29 @@ class ProdutosFragment : Fragment() {
     }
 
     private fun showAddProdutoDialog() {
-        val input = TextInputEditText(requireContext()).apply { hint = "Nome do Produto" }
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Adicionar Produto")
+        val input = TextInputEditText(requireContext()).apply { hint = "Nome do produto" }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Adicionar produto")
             .setView(input)
             .setPositiveButton("Adicionar") { _, _ ->
                 val nome = input.text.toString().trim()
-                if (nome.isNotEmpty()) viewModel.addProduct(nome, categoria)
+                if (nome.isEmpty()) return@setPositiveButton
+                val exists = (viewModel.products.value ?: emptyList()).any { it.name.equals(nome, ignoreCase = true) }
+                if (exists) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Produto duplicado")
+                        .setMessage("'$nome' já existe nesta categoria. Adicionar mesmo assim?")
+                        .setPositiveButton("Adicionar mesmo assim") { _, _ -> viewModel.addProduct(nome, categoria) }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                } else {
+                    viewModel.addProduct(nome, categoria)
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
-    }
-
-    private fun setupSearchBar(view: View) {
-        view.findViewById<TextInputEditText>(R.id.search_bar).addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { adapter.filter(s.toString()) }
-            override fun afterTextChanged(s: Editable?) {}
-        })
+        input.requestFocus()
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 
     companion object {

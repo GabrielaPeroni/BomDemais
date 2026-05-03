@@ -6,7 +6,6 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
-import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
@@ -153,15 +152,35 @@ class CategoriasFragment : Fragment() {
     }
 
     private fun showAddCategoriaDialog() {
-        val input = EditText(requireContext()).apply { hint = "Nome da Categoria" }
-        MaterialAlertDialogBuilder(requireActivity())
+        val padding = (20 * resources.displayMetrics.density).toInt()
+        val input = com.google.android.material.textfield.TextInputEditText(requireContext()).apply {
+            hint = "Nome da Categoria"
+        }
+        val container = android.widget.FrameLayout(requireContext()).apply {
+            setPadding(padding, 0, padding, 0)
+            addView(input)
+        }
+        val dialog = MaterialAlertDialogBuilder(requireActivity())
             .setTitle("Adicionar Categoria")
-            .setView(input)
+            .setView(container)
             .setPositiveButton("Adicionar") { _, _ ->
                 val categoria = input.text.toString().trim()
-                if (categoria.isNotEmpty()) viewModel.addCategory(categoria)
+                if (categoria.isEmpty()) return@setPositiveButton
+                val exists = viewModel.categories.value.any { it.name.equals(categoria, ignoreCase = true) }
+                if (exists) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Categoria duplicada")
+                        .setMessage("'$categoria' já existe. Adicionar mesmo assim?")
+                        .setPositiveButton("Adicionar mesmo assim") { _, _ -> viewModel.addCategory(categoria) }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                } else {
+                    viewModel.addCategory(categoria)
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
+        input.requestFocus()
+        dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
     }
 }

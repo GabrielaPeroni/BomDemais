@@ -30,6 +30,7 @@ class NotasFragment : Fragment() {
     private val viewModel: NotasViewModel by viewModels { NotasViewModel.Factory }
     private lateinit var fab: FloatingActionButton
     private lateinit var rootView: View
+    private lateinit var emptyState: View
     private var actionMode: ActionMode? = null
 
     private val actionModeCallback = object : ActionMode.Callback {
@@ -69,6 +70,7 @@ class NotasFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         fab = view.findViewById(R.id.fab_add_nota)
+        emptyState = view.findViewById(R.id.empty_state)
         recyclerView = view.findViewById(R.id.recycler_view_notas)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
@@ -118,7 +120,10 @@ class NotasFragment : Fragment() {
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.notes.collect { adapter.updateNotes(it) }
+                viewModel.notes.collect {
+                    adapter.updateNotes(it)
+                    emptyState.visibility = if (it.isEmpty()) View.VISIBLE else View.GONE
+                }
             }
         }
     }
