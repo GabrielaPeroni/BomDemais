@@ -4,11 +4,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Product
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 
 class ProdutosAdapter(
     private var productList: MutableList<Product>,
@@ -27,13 +29,13 @@ class ProdutosAdapter(
 
     class ProdutoViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val nameTextView: TextView = view.findViewById(R.id.text_product_name)
+        val unitTextView: TextView = view.findViewById(R.id.text_product_unit)
         val quantityTextView: TextView = view.findViewById(R.id.text_quantity)
         val btnIncrease: Button = view.findViewById(R.id.btn_increase)
         val btnDecrease: Button = view.findViewById(R.id.btn_decrease)
-        val categoryTextView: TextView = view.findViewById(R.id.text_product_category)
         val btnAddToList: Button = view.findViewById(R.id.btn_add_to_list)
-        val checkboxSelect: CheckBox = view.findViewById(R.id.checkbox_select)
         val stepperLayout: View = view.findViewById(R.id.stepper_layout)
+        val badgeLowStock: TextView = view.findViewById(R.id.badge_low_stock)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ProdutoViewHolder {
@@ -43,22 +45,26 @@ class ProdutosAdapter(
 
     override fun onBindViewHolder(holder: ProdutoViewHolder, position: Int) {
         val product = filteredList[position]
+        val isSelected = selectedIds.contains(product.id)
 
         holder.nameTextView.text = product.name
+        holder.unitTextView.text = product.unit
         holder.quantityTextView.text = product.quantity.toString()
-        holder.categoryTextView.text = product.category
 
-        holder.checkboxSelect.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
-        holder.checkboxSelect.isChecked = selectedIds.contains(product.id)
+        holder.badgeLowStock.visibility =
+            if (!isSelectionMode && product.quantity < product.minQuantity) View.VISIBLE else View.GONE
+
         holder.stepperLayout.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
         holder.btnAddToList.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
 
+        (holder.itemView as MaterialCardView).setCardBackgroundColor(
+            if (isSelected) ContextCompat.getColor(holder.itemView.context, R.color.card_selected_bg)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+        )
+
         holder.itemView.setOnClickListener {
-            if (isSelectionMode) {
-                toggleSelection(product.id)
-            } else {
-                onClick(product)
-            }
+            if (isSelectionMode) toggleSelection(product.id)
+            else onClick(product)
         }
 
         holder.itemView.setOnLongClickListener {
@@ -112,6 +118,8 @@ class ProdutosAdapter(
         filteredList.add(0, product)
         notifyItemInserted(0)
     }
+
+    fun restoreProduct(product: Product) = addProduct(product)
 
     fun filter(query: String) {
         filteredList = if (query.isEmpty()) {

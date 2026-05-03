@@ -5,11 +5,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
-import android.widget.CheckBox
 import android.widget.TextView
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.ShoppingItem
+import com.google.android.material.card.MaterialCardView
+import com.google.android.material.color.MaterialColors
 
 class ListaDeComprasAdapter(
     private val items: MutableList<ShoppingItem>,
@@ -25,11 +27,10 @@ class ListaDeComprasAdapter(
 
     class ItemViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val textName: TextView = view.findViewById(R.id.text_item_name)
-        val textCategory: TextView = view.findViewById(R.id.text_item_category)
+        val textUnit: TextView = view.findViewById(R.id.text_item_category)
         val textQty: TextView = view.findViewById(R.id.text_qty_to_buy)
         val btnIncrease: Button = view.findViewById(R.id.btn_increase)
         val btnDecrease: Button = view.findViewById(R.id.btn_decrease)
-        val checkboxSelect: CheckBox = view.findViewById(R.id.checkbox_select)
         val stepperLayout: View = view.findViewById(R.id.stepper_layout)
     }
 
@@ -40,10 +41,12 @@ class ListaDeComprasAdapter(
 
     override fun onBindViewHolder(holder: ItemViewHolder, position: Int) {
         val item = items[position]
+        val isSelected = selectedIds.contains(item.id)
 
         holder.textName.text = item.name
-        holder.textCategory.text = item.category.ifEmpty { "Manual" }
-        holder.textQty.text = item.quantityToBuy.toString()
+        holder.textUnit.text = item.unit
+        holder.textQty.text = item.quantity.toString()
+        holder.stepperLayout.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
 
         if (item.isChecked) {
             holder.textName.paintFlags = holder.textName.paintFlags or Paint.STRIKE_THRU_TEXT_FLAG
@@ -53,9 +56,10 @@ class ListaDeComprasAdapter(
             holder.itemView.alpha = 1f
         }
 
-        holder.checkboxSelect.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
-        holder.checkboxSelect.isChecked = selectedIds.contains(item.id)
-        holder.stepperLayout.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
+        (holder.itemView as MaterialCardView).setCardBackgroundColor(
+            if (isSelected) ContextCompat.getColor(holder.itemView.context, R.color.card_selected_bg)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+        )
 
         holder.itemView.setOnClickListener {
             val pos = holder.bindingAdapterPosition
@@ -70,16 +74,14 @@ class ListaDeComprasAdapter(
         }
 
         holder.itemView.setOnLongClickListener {
-            if (!isSelectionMode) {
-                onLongPress(item)
-            }
+            if (!isSelectionMode) onLongPress(item)
             true
         }
 
         holder.btnIncrease.setOnClickListener {
             val pos = holder.bindingAdapterPosition
             if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
-            item.quantityToBuy++
+            item.quantity++
             onQuantityChanged(item)
             notifyItemChanged(pos)
         }
@@ -87,8 +89,8 @@ class ListaDeComprasAdapter(
         holder.btnDecrease.setOnClickListener {
             val pos = holder.bindingAdapterPosition
             if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
-            if (item.quantityToBuy > 1) {
-                item.quantityToBuy--
+            if (item.quantity > 1) {
+                item.quantity--
                 onQuantityChanged(item)
                 notifyItemChanged(pos)
             }
@@ -101,8 +103,7 @@ class ListaDeComprasAdapter(
 
     fun updateItems(newItems: List<ShoppingItem>) {
         items.clear()
-        val sorted = newItems.sortedBy { it.isChecked }
-        items.addAll(sorted)
+        items.addAll(newItems.sortedBy { it.isChecked })
         notifyDataSetChanged()
     }
 
@@ -141,9 +142,7 @@ class ListaDeComprasAdapter(
     }
 
     private fun sortCheckedToBottom() {
-        val sorted = items.sortedBy { it.isChecked }
-        items.clear()
-        items.addAll(sorted)
+        items.sortBy { it.isChecked }
         notifyDataSetChanged()
     }
 }

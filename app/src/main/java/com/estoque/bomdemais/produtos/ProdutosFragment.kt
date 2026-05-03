@@ -1,4 +1,4 @@
-package com.estoque.bomdemais.listadecompras
+package com.estoque.bomdemais.produtos
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -6,8 +6,10 @@ import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.view.ActionMode
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.Lifecycle
@@ -17,23 +19,25 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
-import com.estoque.bomdemais.data.ShoppingItem
 import com.estoque.bomdemais.utils.SwipeToDeleteCallback
+import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.textfield.TextInputEditText
 import kotlinx.coroutines.launch
 
-class ListaDeComprasFragment : Fragment() {
+class ProdutosFragment : Fragment() {
 
     private lateinit var recyclerView: RecyclerView
-    private lateinit var adapter: ListaDeComprasAdapter
-    private val viewModel: ListaDeComprasViewModel by viewModels { ListaDeComprasViewModel.Factory }
+    private lateinit var adapter: ProdutosAdapter
+    private lateinit var categoria: String
     private lateinit var fab: FloatingActionButton
-    private lateinit var rootView: View
-    private lateinit var emptyState: View
     private var actionMode: ActionMode? = null
+
+    private val viewModel: ProdutosViewModel by viewModels {
+        ProdutosViewModel.factory(categoria)
+    }
 
     private val actionModeCallback = object : ActionMode.Callback {
         override fun onCreateActionMode(mode: ActionMode, menu: Menu): Boolean {
@@ -63,25 +67,38 @@ class ListaDeComprasFragment : Fragment() {
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        categoria = arguments?.getString(ARG_CATEGORIA) ?: ""
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        rootView = inflater.inflate(R.layout.fragment_lista_de_compras, container, false)
-        return rootView
+        return inflater.inflate(R.layout.fragment_produtos, container, false)
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        fab = view.findViewById(R.id.fab_add_item)
-        emptyState = view.findViewById(R.id.empty_state)
-        recyclerView = view.findViewById(R.id.recycler_view_lista)
+        val toolbar = requireActivity().findViewById<MaterialToolbar>(R.id.toolbar)
+        toolbar.title = categoria
+        toolbar.navigationIcon = ContextCompat.getDrawable(requireContext(), R.drawable.left_return_arrow)
+        toolbar.setNavigationOnClickListener { parentFragmentManager.popBackStack() }
+
+        fab = view.findViewById(R.id.fab_add_produto)
+        val emptyState = view.findViewById<View>(R.id.empty_state_produtos)
+        recyclerView = view.findViewById(R.id.recycler_view_produtos)
         recyclerView.layoutManager = LinearLayoutManager(requireContext())
 
-        adapter = ListaDeComprasAdapter(
+        adapter = ProdutosAdapter(
             mutableListOf(),
-            onCheckedChanged = { item -> viewModel.toggleChecked(item) },
-            onQuantityChanged = { item -> viewModel.updateQuantity(item) },
-            onLongPress = { item ->
-                adapter.enterSelectionMode(item.id)
+            onClick = {},
+            onAddToList = { product ->
+                viewModel.addToShoppingList(product)
+                Toast.makeText(requireContext(), "'${product.name}' adicionado à lista!", Toast.LENGTH_SHORT).show()
+            },
+            onQuantityChanged = { product -> viewModel.updateQuantity(product) },
+            onLongPress = { product ->
+                adapter.enterSelectionMode(product.id)
                 actionMode = (requireActivity() as AppCompatActivity).startSupportActionMode(actionModeCallback)
                 fab.hide()
             },
@@ -92,16 +109,16 @@ class ListaDeComprasFragment : Fragment() {
         val swipeCallback = SwipeToDeleteCallback(
             isEnabled = { !adapter.isSelectionMode },
             onSwiped = { position ->
-                val item = adapter.getItemAt(position)
-                adapter.removeItem(item)
-                Snackbar.make(rootView, "'${item.name}' removido", Snackbar.LENGTH_LONG)
+                val product = adapter.getItemAt(position)
+                adapter.removeProduct(product)
+                Snackbar.make(recyclerView, "'${product.name}' removido", Snackbar.LENGTH_LONG)
                     .setAction("Desfazer") {
-                        adapter.addItem(item)
-                        viewModel.restoreItem(item)
+                        adapter.addProduct(product)
+                        viewModel.restoreProduct(product)
                     }
                     .addCallback(object : Snackbar.Callback() {
                         override fun onDismissed(snackbar: Snackbar, event: Int) {
-                            if (event != DISMISS_EVENT_ACTION) viewModel.deleteItem(item)
+                            if (event != DISMISS_EVENT_ACTION) viewModel.deleteProduct(product)
                         }
                     })
                     .show()
@@ -109,21 +126,17 @@ class ListaDeComprasFragment : Fragment() {
         )
         ItemTouchHelper(swipeCallback).attachToRecyclerView(recyclerView)
 
-        fab.setOnClickListener { showAddItemDialog() }
+        fab.setOnClickListener { showAddProdutoDialog() }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.items.collect {
-                    adapter.updateItems(it)
-                    emptyState.visibility = if (it.isEmpty()) View.VISIBLE else View.GONE
+                viewModel.products.collect { products ->
+                    if (products == null) return@collect
+                    adapter.updateProducts(products)
+                    emptyState.visibility = if (products.isEmpty()) View.VISIBLE else View.GONE
                 }
             }
         }
-    }
-
-    override fun onHiddenChanged(hidden: Boolean) {
-        super.onHiddenChanged(hidden)
-        if (hidden) { actionMode?.finish(); actionMode = null }
     }
 
     override fun onDestroyView() {
@@ -136,11 +149,11 @@ class ListaDeComprasFragment : Fragment() {
         val selected = adapter.getSelectedItems()
         if (selected.isEmpty()) return
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Excluir ${selected.size} item(s)?")
+            .setTitle("Excluir ${selected.size} produto(s)?")
             .setPositiveButton("Excluir") { _, _ ->
                 selected.forEach {
-                    viewModel.deleteItem(it)
-                    adapter.removeItem(it)
+                    viewModel.deleteProduct(it)
+                    adapter.removeProduct(it)
                 }
                 mode.finish()
             }
@@ -149,15 +162,15 @@ class ListaDeComprasFragment : Fragment() {
     }
 
     private fun handleRename(mode: ActionMode) {
-        val item = adapter.getSelectedItems().firstOrNull() ?: return
-        val input = TextInputEditText(requireContext()).apply { setText(item.name) }
+        val product = adapter.getSelectedItems().firstOrNull() ?: return
+        val input = TextInputEditText(requireContext()).apply { setText(product.name) }
         MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Renomear item")
+            .setTitle("Renomear produto")
             .setView(input)
             .setPositiveButton("Salvar") { _, _ ->
                 val newName = input.text.toString().trim()
                 if (newName.isNotEmpty()) {
-                    viewModel.renameItem(item, newName)
+                    viewModel.renameProduct(product, newName)
                     mode.finish()
                 }
             }
@@ -165,25 +178,37 @@ class ListaDeComprasFragment : Fragment() {
             .show()
     }
 
-    private fun showAddItemDialog() {
-        val padding = (20 * resources.displayMetrics.density).toInt()
-        val input = com.google.android.material.textfield.TextInputEditText(requireContext()).apply {
-            hint = "Nome do item"
-        }
-        val container = android.widget.FrameLayout(requireContext()).apply {
-            setPadding(padding, 0, padding, 0)
-            addView(input)
-        }
-        val dialog = MaterialAlertDialogBuilder(requireActivity())
-            .setTitle("Adicionar à lista")
-            .setView(container)
+    private fun showAddProdutoDialog() {
+        val input = TextInputEditText(requireContext()).apply { hint = "Nome do produto" }
+        val dialog = MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Adicionar produto")
+            .setView(input)
             .setPositiveButton("Adicionar") { _, _ ->
-                val name = input.text.toString().trim()
-                if (name.isNotEmpty()) viewModel.addItem(name)
+                val nome = input.text.toString().trim()
+                if (nome.isEmpty()) return@setPositiveButton
+                val exists = (viewModel.products.value ?: emptyList()).any { it.name.equals(nome, ignoreCase = true) }
+                if (exists) {
+                    MaterialAlertDialogBuilder(requireContext())
+                        .setTitle("Produto duplicado")
+                        .setMessage("'$nome' já existe nesta categoria. Adicionar mesmo assim?")
+                        .setPositiveButton("Adicionar mesmo assim") { _, _ -> viewModel.addProduct(nome, categoria) }
+                        .setNegativeButton("Cancelar", null)
+                        .show()
+                } else {
+                    viewModel.addProduct(nome, categoria)
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
         input.requestFocus()
         dialog.window?.setSoftInputMode(android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE)
+    }
+
+    companion object {
+        private const val ARG_CATEGORIA = "categoria"
+
+        fun newInstance(categoria: String) = ProdutosFragment().apply {
+            arguments = Bundle().apply { putString(ARG_CATEGORIA, categoria) }
+        }
     }
 }

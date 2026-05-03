@@ -1,29 +1,30 @@
 package com.estoque.bomdemais.categorias
 
+import android.content.res.ColorStateList
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.CheckBox
 import android.widget.FrameLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
+import com.estoque.bomdemais.data.Category
+import com.google.android.material.color.MaterialColors
 
 class CategoriasAdapter(
-    var categorias: MutableList<String>,
-    private val onClick: (String) -> Unit,
-    private val onLongPress: (String) -> Unit,
+    var categorias: MutableList<Category>,
+    private val onClick: (Category) -> Unit,
+    private val onLongPress: (Category) -> Unit,
     private val onSelectionChanged: (count: Int) -> Unit
 ) : RecyclerView.Adapter<CategoriasAdapter.CategoriaViewHolder>() {
 
     var isSelectionMode = false
         private set
-    private val selectedNames = mutableSetOf<String>()
+    private val selectedIds = mutableSetOf<String>()
 
     class CategoriaViewHolder(view: View) : RecyclerView.ViewHolder(view) {
         val frameLayout: FrameLayout = view.findViewById(R.id.frame_layout)
         val textViewCategoria: TextView = view.findViewById(R.id.text_categoria)
-        val checkboxSelect: CheckBox = view.findViewById(R.id.checkbox_select)
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): CategoriaViewHolder {
@@ -33,18 +34,27 @@ class CategoriasAdapter(
 
     override fun onBindViewHolder(holder: CategoriaViewHolder, position: Int) {
         val categoria = categorias[position]
-        holder.textViewCategoria.text = categoria
-        holder.frameLayout.setBackgroundResource(R.drawable.button_categoria)
+        val isSelected = selectedIds.contains(categoria.id)
+        val view = holder.itemView
 
-        holder.checkboxSelect.visibility = if (isSelectionMode) View.VISIBLE else View.GONE
-        holder.checkboxSelect.isChecked = selectedNames.contains(categoria)
+        holder.textViewCategoria.text = categoria.name
+
+        val bgColor = if (isSelected)
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimaryContainer, 0)
+        else
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorPrimary, 0)
+
+        val textColor = if (isSelected)
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnPrimaryContainer, 0)
+        else
+            MaterialColors.getColor(view, com.google.android.material.R.attr.colorOnPrimary, 0)
+
+        holder.frameLayout.backgroundTintList = ColorStateList.valueOf(bgColor)
+        holder.textViewCategoria.setTextColor(textColor)
 
         holder.itemView.setOnClickListener {
-            if (isSelectionMode) {
-                toggleSelection(categoria)
-            } else {
-                onClick(categoria)
-            }
+            if (isSelectionMode) toggleSelection(categoria.id)
+            else onClick(categoria)
         }
 
         holder.itemView.setOnLongClickListener {
@@ -55,47 +65,32 @@ class CategoriasAdapter(
 
     override fun getItemCount() = categorias.size
 
-    fun addCategoria(categoria: String) {
-        if (!categorias.contains(categoria)) {
-            categorias.add(0, categoria)
-            notifyItemInserted(0)
-        }
-    }
-
-    fun removeCategoria(name: String) {
-        val position = categorias.indexOf(name)
+    fun removeCategoria(category: Category) {
+        val position = categorias.indexOfFirst { it.id == category.id }
         if (position >= 0) {
             categorias.removeAt(position)
             notifyItemRemoved(position)
         }
     }
 
-    fun renameCategoria(oldName: String, newName: String) {
-        val position = categorias.indexOf(oldName)
-        if (position >= 0) {
-            categorias[position] = newName
-            notifyItemChanged(position)
-        }
-    }
-
-    fun enterSelectionMode(name: String) {
+    fun enterSelectionMode(category: Category) {
         isSelectionMode = true
-        selectedNames.add(name)
+        selectedIds.add(category.id)
         notifyDataSetChanged()
-        onSelectionChanged(selectedNames.size)
+        onSelectionChanged(selectedIds.size)
     }
 
     fun exitSelectionMode() {
         isSelectionMode = false
-        selectedNames.clear()
+        selectedIds.clear()
         notifyDataSetChanged()
     }
 
-    fun getSelectedItems(): List<String> = categorias.filter { selectedNames.contains(it) }
+    fun getSelectedItems(): List<Category> = categorias.filter { selectedIds.contains(it.id) }
 
-    private fun toggleSelection(name: String) {
-        if (selectedNames.contains(name)) selectedNames.remove(name) else selectedNames.add(name)
+    private fun toggleSelection(id: String) {
+        if (selectedIds.contains(id)) selectedIds.remove(id) else selectedIds.add(id)
         notifyDataSetChanged()
-        onSelectionChanged(selectedNames.size)
+        onSelectionChanged(selectedIds.size)
     }
 }

@@ -1,9 +1,40 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="black">#FF000000</color>
-    <color name="white">#FFFFFFFF</color>
-    <color name="purple">#6b256e</color>
-    <color name="pink">#C71585</color>
-    <color name="Orchid">#DA70D6</color>
-    <color name="colorPurpleContainer">#F5D6F7</color>
+    <!-- MD3 Primary — deep violet-purple -->
+    <color name="md_theme_light_primary">#6D2DA0</color>
+    <color name="md_theme_light_onPrimary">#FFFFFF</color>
+    <color name="md_theme_light_primaryContainer">#ECDCFF</color>
+    <color name="md_theme_light_onPrimaryContainer">#23005A</color>
+
+    <!-- MD3 Secondary — warm rose -->
+    <color name="md_theme_light_secondary">#9C3D6A</color>
+    <color name="md_theme_light_onSecondary">#FFFFFF</color>
+    <color name="md_theme_light_secondaryContainer">#FFD9E4</color>
+    <color name="md_theme_light_onSecondaryContainer">#3E0021</color>
+
+    <!-- MD3 Tertiary — terracotta -->
+    <color name="md_theme_light_tertiary">#A63A32</color>
+    <color name="md_theme_light_onTertiary">#FFFFFF</color>
+    <color name="md_theme_light_tertiaryContainer">#FFDAD7</color>
+    <color name="md_theme_light_onTertiaryContainer">#3C0400</color>
+
+    <!-- MD3 Error -->
+    <color name="md_theme_light_error">#B3261E</color>
+    <color name="md_theme_light_onError">#FFFFFF</color>
+    <color name="md_theme_light_errorContainer">#F9DEDC</color>
+    <color name="md_theme_light_onErrorContainer">#410E0B</color>
+
+    <!-- MD3 Surface & Neutral — neutral white, no purple tint -->
+    <color name="md_theme_light_background">#FFFBFE</color>
+    <color name="md_theme_light_onBackground">#1C1B1F</color>
+    <color name="md_theme_light_surface">#FFFBFE</color>
+    <color name="md_theme_light_onSurface">#1C1B1F</color>
+    <color name="md_theme_light_surfaceVariant">#F2DDE5</color>
+    <color name="md_theme_light_onSurfaceVariant">#514347</color>
+    <color name="md_theme_light_outline">#837278</color>
+    <color name="md_theme_light_outlineVariant">#D7BEC4</color>
+    <color name="md_theme_light_scrim">#000000</color>
+
+    <!-- Fixed semantic — outside tonal system -->
+    <color name="colorHighlight">#FFBD5F</color>
 </resources>

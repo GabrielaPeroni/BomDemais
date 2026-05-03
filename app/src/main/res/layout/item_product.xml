@@ -6,48 +6,53 @@
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="12dp"
     android:layout_marginVertical="4dp"
-    app:cardCornerRadius="12dp"
-    app:cardElevation="2dp">
+    app:cardCornerRadius="16dp"
+    app:cardElevation="0dp"
+    app:strokeWidth="1dp"
+    app:strokeColor="?attr/colorOutlineVariant">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="12dp">
 
-        <CheckBox
-            android:id="@+id/checkbox_select"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:visibility="gone"
-            android:clickable="false"
-            android:focusable="false"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintBottom_toBottomOf="@id/stepper_layout"
-            app:layout_constraintStart_toStartOf="parent" />
-
         <TextView
             android:id="@+id/text_product_name"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="16sp"
-            android:textStyle="bold"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
             android:textColor="?attr/colorOnSurface"
             app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toEndOf="@id/checkbox_select"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/stepper_layout" />
 
         <TextView
-            android:id="@+id/text_product_category"
+            android:id="@+id/text_product_unit"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text=""
-            android:textSize="12sp"
+            android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
             android:layout_marginTop="2dp"
             app:layout_constraintTop_toBottomOf="@id/text_product_name"
-            app:layout_constraintStart_toEndOf="@id/checkbox_select"
+            app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toStartOf="@id/stepper_layout" />
+
+        <TextView
+            android:id="@+id/badge_low_stock"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Pouco estoque"
+            android:textSize="10sp"
+            android:textColor="?attr/colorOnTertiaryContainer"
+            android:background="@drawable/badge_low_stock_bg"
+            android:backgroundTint="?attr/colorTertiaryContainer"
+            android:paddingHorizontal="6dp"
+            android:paddingVertical="2dp"
+            android:layout_marginTop="4dp"
+            android:visibility="gone"
+            app:layout_constraintTop_toBottomOf="@id/text_product_unit"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintBottom_toBottomOf="@id/stepper_layout" />
 
         <LinearLayout
             android:id="@+id/stepper_layout"
@@ -63,8 +68,9 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/button_left_background"
+                android:backgroundTint="?attr/colorSecondary"
                 android:text="−"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnSecondary"
                 android:textSize="20sp"
                 android:padding="0dp" />
 
@@ -73,9 +79,7 @@
                 android:layout_width="44dp"
                 android:layout_height="36dp"
                 android:gravity="center"
-                android:text=""
-                android:textSize="16sp"
-                android:textStyle="bold"
+                android:textAppearance="?attr/textAppearanceTitleMedium"
                 android:textColor="?attr/colorOnSurface"
                 android:background="?attr/colorSurfaceVariant" />
 
@@ -84,8 +88,9 @@
                 android:layout_width="36dp"
                 android:layout_height="36dp"
                 android:background="@drawable/button_right_background"
+                android:backgroundTint="?attr/colorSecondary"
                 android:text="+"
-                android:textColor="@color/white"
+                android:textColor="?attr/colorOnSecondary"
                 android:textSize="20sp"
                 android:padding="0dp" />
 
@@ -101,6 +106,7 @@
             android:layout_marginTop="8dp"
             android:visibility="gone"
             app:layout_constraintTop_toBottomOf="@id/stepper_layout"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent" />
 

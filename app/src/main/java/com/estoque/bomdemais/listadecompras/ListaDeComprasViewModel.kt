@@ -17,8 +17,7 @@ class ListaDeComprasViewModel(private val repo: ShoppingRepository) : ViewModel(
     val items: StateFlow<List<ShoppingItem>> = repo.shoppingItems()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
-    fun addItem(name: String) = viewModelScope.launch { repo.addItem(name) }
-    fun addItemFromProduct(name: String, category: String) = viewModelScope.launch { repo.addItem(name, category) }
+    fun addItem(name: String, unit: String = "un") = viewModelScope.launch { repo.addItem(name, unit) }
     fun deleteItem(item: ShoppingItem) = viewModelScope.launch { repo.deleteItem(item.id) }
     fun restoreItem(item: ShoppingItem) = viewModelScope.launch { repo.restoreItem(item) }
     fun toggleChecked(item: ShoppingItem) = viewModelScope.launch {

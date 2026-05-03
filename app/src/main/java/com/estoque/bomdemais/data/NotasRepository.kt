@@ -26,12 +26,17 @@ class NotasRepository {
         awaitClose { ref.removeEventListener(listener) }
     }
 
-    suspend fun addNote(text: String) {
+    suspend fun addNote(title: String, body: String) {
         val key = ref.push().key ?: return
-        ref.child(key).setValue(Note(id = key, text = text, timestamp = System.currentTimeMillis())).await()
+        ref.child(key).setValue(
+            Note(id = key, title = title, body = body, timestamp = System.currentTimeMillis())
+        ).await()
     }
 
     suspend fun deleteNote(id: String) = ref.child(id).removeValue().await()
     suspend fun restoreNote(note: Note) = ref.child(note.id).setValue(note).await()
-    suspend fun editNote(note: Note, newText: String) = ref.child(note.id).child("text").setValue(newText).await()
+
+    suspend fun editNote(note: Note, title: String, body: String) {
+        ref.child(note.id).updateChildren(mapOf("title" to title, "body" to body)).await()
+    }
 }

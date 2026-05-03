@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.coordinatorlayout.widget.CoordinatorLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:background="?attr/colorSurface">
 
     <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/recycler_view_categorias"
+        android:id="@+id/recycler_view_produtos"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:paddingTop="8dp"
@@ -14,49 +14,50 @@
         android:clipToPadding="false" />
 
     <LinearLayout
-        android:id="@+id/empty_state"
+        android:id="@+id/empty_state_produtos"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="center"
-        android:orientation="vertical"
         android:gravity="center"
-        android:visibility="gone"
-        android:layout_marginBottom="88dp">
+        android:orientation="vertical"
+        android:visibility="gone">
 
         <ImageView
             android:layout_width="72dp"
             android:layout_height="72dp"
-            android:src="@drawable/ic_inventory"
             android:alpha="0.3"
             android:contentDescription="@null"
-            app:tint="?attr/colorPrimary" />
+            android:src="@drawable/ic_inventory"
+            app:tint="?attr/colorPrimary"
+            xmlns:app="http://schemas.android.com/apk/res-auto" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Nenhuma categoria ainda"
+            android:layout_marginTop="12dp"
+            android:text="Nenhum produto ainda"
             android:textAppearance="?attr/textAppearanceTitleMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginTop="12dp" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
             android:text="Toque em + para adicionar"
             android:textAppearance="?attr/textAppearanceBodyMedium"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            android:layout_marginTop="4dp" />
+            android:textColor="?attr/colorOnSurfaceVariant" />
 
     </LinearLayout>
 
     <com.google.android.material.floatingactionbutton.FloatingActionButton
-        android:id="@+id/fab_add_categoria"
+        android:id="@+id/fab_add_produto"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|end"
         android:layout_marginEnd="16dp"
-        android:layout_marginBottom="96dp"
-        android:contentDescription="Adicionar nova categoria"
-        app:srcCompat="@android:drawable/ic_input_add" />
+        android:layout_marginBottom="16dp"
+        android:contentDescription="Adicionar novo produto"
+        app:srcCompat="@android:drawable/ic_input_add"
+        xmlns:app="http://schemas.android.com/apk/res-auto" />
 
 </androidx.coordinatorlayout.widget.CoordinatorLayout>
