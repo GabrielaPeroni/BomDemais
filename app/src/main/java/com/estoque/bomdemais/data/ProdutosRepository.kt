@@ -26,11 +26,16 @@ class ProdutosRepository {
         awaitClose { query.removeEventListener(listener) }
     }
 
-    suspend fun addProduct(name: String, category: String): Product? {
+    suspend fun addProduct(name: String, category: String, unit: String, minQuantity: Int): Product? {
         val key = ref.push().key ?: return null
-        val product = Product(id = key, name = name, category = category, quantity = 0)
+        val product = Product(id = key, name = name, category = category, quantity = 0, unit = unit, minQuantity = minQuantity)
         return try { ref.child(key).setValue(product).await(); product }
         catch (e: Exception) { null }
+    }
+
+    suspend fun getProductsByCategory(category: String): List<Product> {
+        val snap = ref.orderByChild("category").equalTo(category).get().await()
+        return snap.children.mapNotNull { it.getValue(Product::class.java) }
     }
 
     suspend fun deleteProduct(id: String) = ref.child(id).removeValue().await()

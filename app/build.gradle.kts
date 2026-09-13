@@ -50,9 +50,8 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.core)
     implementation (libs.androidx.recyclerview)
     implementation(platform("com.google.firebase:firebase-bom:33.3.0"))
-    implementation(platform("com.google.firebase:firebase-database:21.0.0"))
 
-    implementation ("com.google.firebase:firebase-auth:21.0.5")
+    implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-database-ktx")
     implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:2.8.7")
     implementation("androidx.lifecycle:lifecycle-runtime-ktx:2.8.7")
