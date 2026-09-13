@@ -1,6 +1,7 @@
 package com.estoque.bomdemais
 
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.os.Bundle
 import android.view.Menu
 import android.view.MenuItem
@@ -12,6 +13,8 @@ import com.estoque.bomdemais.listadecompras.ListaDeComprasFragment
 import com.estoque.bomdemais.notas.NotasFragment
 import com.google.android.material.appbar.MaterialToolbar
 import com.google.android.material.bottomnavigation.BottomNavigationView
+import com.google.android.material.color.MaterialColors
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 
 class MainActivity : AppCompatActivity() {
@@ -39,6 +42,15 @@ class MainActivity : AppCompatActivity() {
         setSupportActionBar(toolbar)
 
         bottomNav = findViewById(R.id.bottom_nav)
+
+        val secondaryContainer = MaterialColors.getColor(this, com.google.android.material.R.attr.colorSecondaryContainer, 0)
+        val onSecondaryContainer = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSecondaryContainer, 0)
+        val onSurfaceVariant = MaterialColors.getColor(this, com.google.android.material.R.attr.colorOnSurfaceVariant, 0)
+        bottomNav.itemActiveIndicatorColor = ColorStateList.valueOf(secondaryContainer)
+        bottomNav.itemIconTintList = ColorStateList(
+            arrayOf(intArrayOf(android.R.attr.state_checked), intArrayOf()),
+            intArrayOf(onSecondaryContainer, onSurfaceVariant)
+        )
 
         if (savedInstanceState == null) {
             estoque = CategoriasFragment()
@@ -118,9 +130,16 @@ class MainActivity : AppCompatActivity() {
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         if (item.itemId == R.id.action_logout) {
-            FirebaseAuth.getInstance().signOut()
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
+            MaterialAlertDialogBuilder(this)
+                .setTitle("Sair")
+                .setMessage("Deseja realmente sair da conta?")
+                .setPositiveButton("Sair") { _, _ ->
+                    FirebaseAuth.getInstance().signOut()
+                    startActivity(Intent(this, LoginActivity::class.java))
+                    finish()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
             return true
         }
         return super.onOptionsItemSelected(item)

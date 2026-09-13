@@ -4,7 +4,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Note
@@ -45,8 +44,8 @@ class NotasAdapter(
         holder.textTimestamp.text = dateFormat.format(Date(note.timestamp))
 
         (holder.itemView as MaterialCardView).setCardBackgroundColor(
-            if (isSelected) ContextCompat.getColor(holder.itemView.context, R.color.card_selected_bg)
-            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+            if (isSelected) MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorPrimaryContainer, 0)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface, 0)
         )
 
         holder.itemView.setOnClickListener {

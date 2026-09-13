@@ -60,8 +60,8 @@ class TransactionAdapter(
         holder.textAmount.text = String.format(Locale("pt", "BR"), "R$ %.2f", t.amount)
 
         (holder.itemView as MaterialCardView).setCardBackgroundColor(
-            if (isSelected) ContextCompat.getColor(ctx, R.color.card_selected_bg)
-            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+            if (isSelected) MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorPrimaryContainer, 0)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface, 0)
         )
 
         holder.itemView.setOnClickListener {

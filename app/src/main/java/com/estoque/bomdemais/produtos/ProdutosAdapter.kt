@@ -5,7 +5,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.Product
@@ -58,8 +57,8 @@ class ProdutosAdapter(
         holder.btnAddToList.visibility = if (isSelectionMode) View.GONE else View.VISIBLE
 
         (holder.itemView as MaterialCardView).setCardBackgroundColor(
-            if (isSelected) ContextCompat.getColor(holder.itemView.context, R.color.card_selected_bg)
-            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+            if (isSelected) MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorPrimaryContainer, 0)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface, 0)
         )
 
         holder.itemView.setOnClickListener {
@@ -75,20 +74,20 @@ class ProdutosAdapter(
         holder.btnAddToList.setOnClickListener { onAddToList(product) }
 
         holder.btnIncrease.setOnClickListener {
-            val pos = holder.bindingAdapterPosition
-            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             product.quantity++
+            holder.quantityTextView.text = product.quantity.toString()
+            holder.badgeLowStock.visibility =
+                if (!isSelectionMode && product.quantity < product.minQuantity) View.VISIBLE else View.GONE
             onQuantityChanged(product)
-            notifyItemChanged(pos)
         }
 
         holder.btnDecrease.setOnClickListener {
-            val pos = holder.bindingAdapterPosition
-            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             if (product.quantity > 0) {
                 product.quantity--
+                holder.quantityTextView.text = product.quantity.toString()
+                holder.badgeLowStock.visibility =
+                    if (!isSelectionMode && product.quantity < product.minQuantity) View.VISIBLE else View.GONE
                 onQuantityChanged(product)
-                notifyItemChanged(pos)
             }
         }
     }

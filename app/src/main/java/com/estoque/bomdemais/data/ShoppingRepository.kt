@@ -47,4 +47,12 @@ class ShoppingRepository {
     suspend fun updateQuantity(item: ShoppingItem) = ref.child(item.id).child("quantity").setValue(item.quantity).await()
     suspend fun updateChecked(item: ShoppingItem) = ref.child(item.id).child("isChecked").setValue(item.isChecked).await()
     suspend fun renameItem(item: ShoppingItem, newName: String) = ref.child(item.id).child("name").setValue(newName).await()
+
+    suspend fun deleteItemsByNames(names: Set<String>) {
+        val snap = ref.get().await()
+        snap.children.forEach { child ->
+            val item = child.getValue(ShoppingItem::class.java) ?: return@forEach
+            if (item.name in names) ref.child(item.id).removeValue().await()
+        }
+    }
 }

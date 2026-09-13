@@ -6,7 +6,6 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.TextView
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.estoque.bomdemais.R
 import com.estoque.bomdemais.data.ShoppingItem
@@ -57,8 +56,8 @@ class ListaDeComprasAdapter(
         }
 
         (holder.itemView as MaterialCardView).setCardBackgroundColor(
-            if (isSelected) ContextCompat.getColor(holder.itemView.context, R.color.card_selected_bg)
-            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface)
+            if (isSelected) MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorPrimaryContainer, 0)
+            else MaterialColors.getColor(holder.itemView, com.google.android.material.R.attr.colorSurface, 0)
         )
 
         holder.itemView.setOnClickListener {
@@ -79,20 +78,16 @@ class ListaDeComprasAdapter(
         }
 
         holder.btnIncrease.setOnClickListener {
-            val pos = holder.bindingAdapterPosition
-            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             item.quantity++
+            holder.textQty.text = item.quantity.toString()
             onQuantityChanged(item)
-            notifyItemChanged(pos)
         }
 
         holder.btnDecrease.setOnClickListener {
-            val pos = holder.bindingAdapterPosition
-            if (pos == RecyclerView.NO_ID.toInt()) return@setOnClickListener
             if (item.quantity > 1) {
                 item.quantity--
+                holder.textQty.text = item.quantity.toString()
                 onQuantityChanged(item)
-                notifyItemChanged(pos)
             }
         }
     }

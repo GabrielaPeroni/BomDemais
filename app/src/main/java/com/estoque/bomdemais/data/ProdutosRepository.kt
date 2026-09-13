@@ -33,6 +33,11 @@ class ProdutosRepository {
         catch (e: Exception) { null }
     }
 
+    suspend fun getProductsByCategory(category: String): List<Product> {
+        val snap = ref.orderByChild("category").equalTo(category).get().await()
+        return snap.children.mapNotNull { it.getValue(Product::class.java) }
+    }
+
     suspend fun deleteProduct(id: String) = ref.child(id).removeValue().await()
     suspend fun restoreProduct(product: Product) = ref.child(product.id).setValue(product).await()
     suspend fun updateQuantity(product: Product) = ref.child(product.id).child("quantity").setValue(product.quantity).await()

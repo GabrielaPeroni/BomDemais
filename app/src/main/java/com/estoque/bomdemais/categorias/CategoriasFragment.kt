@@ -120,16 +120,25 @@ class CategoriasFragment : Fragment() {
     private fun handleDelete(mode: ActionMode) {
         val selected = adapterCategorias.getSelectedItems()
         if (selected.isEmpty()) return
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Excluir ${selected.size} categoria(s)?")
-            .setMessage("Todos os produtos dentro dessas categorias também serão excluídos.")
-            .setPositiveButton("Excluir") { _, _ ->
-                viewModel.deleteCategories(selected)
-                selected.forEach { adapterCategorias.removeCategoria(it) }
-                mode.finish()
+        viewLifecycleOwner.lifecycleScope.launch {
+            val products = viewModel.getProductsForCategories(selected)
+            val message = if (products.isEmpty()) {
+                "As categorias selecionadas serão excluídas permanentemente."
+            } else {
+                val names = products.joinToString("\n  • ") { it.name }
+                "Os seguintes produtos também serão excluídos permanentemente e removidos da lista de compras:\n\n  • $names"
             }
-            .setNegativeButton("Cancelar", null)
-            .show()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Excluir ${selected.size} categoria(s)?")
+                .setMessage(message)
+                .setPositiveButton("Excluir") { _, _ ->
+                    viewModel.deleteCategoriesWithCascade(selected, products)
+                    selected.forEach { adapterCategorias.removeCategoria(it) }
+                    mode.finish()
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        }
     }
 
     private fun handleRename(mode: ActionMode) {
